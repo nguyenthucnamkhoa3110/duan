@@ -432,7 +432,7 @@ const HomePage = ({ navigate }) => {
         <div className="container mx-auto px-4 md:px-8">
           <div className="flex flex-col md:flex-row md:items-end justify-between mb-12">
             <div>
-              <h2 className="text-3xl md:text-4xl font-bold text-[#0A2540] mb-4">Căn hộ nổi bật</h2>
+              <h2 className="text-3xl md:text-4xl font-bold text-[#0A2540] mb-4">Ngủ chưa bé Cam?</h2>
               <p className="text-gray-500 max-w-xl">Những không gian sống được yêu thích nhất với thiết kế độc đáo và tiện ích vượt trội.</p>
             </div>
             <Button variant="ghost" className="mt-4 md:mt-0 group" onClick={() => navigate('listings')}>
