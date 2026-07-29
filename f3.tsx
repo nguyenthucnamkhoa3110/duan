@@ -7,7 +7,10 @@ import {
   Facebook, Instagram, Map, Navigation, Upload, Trash2,
   LogOut, Plus, LoaderCircle, Pencil, Save, Building2, TrainFront
 } from 'lucide-react';
-import { hasSupabaseConfig, listApartments, supabase, uploadApartmentImages } from './src/lib/supabase';
+import {
+  getMyProfile, hasSupabaseConfig, listApartments, listFavoriteIds,
+  setFavorite, supabase, uploadApartmentImages, usernameAuth
+} from './src/lib/supabase';
 
 const AMENITIES = {
   balcony: { icon: <Wind size={18} />, label: 'Ban công' },
@@ -178,7 +181,7 @@ const Button = ({ children, variant = 'primary', className = '', ...props }) => 
   );
 };
 
-const ApartmentCard = ({ data, onClick }) => {
+const ApartmentCard = ({ data, onClick, isFavorite = false, onFavorite }) => {
   return (
     <div 
       className="group bg-white rounded-2xl overflow-hidden border border-gray-100 shadow-[0_4px_20px_rgb(0,0,0,0.03)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] transition-all duration-500 cursor-pointer flex flex-col h-full"
@@ -194,8 +197,13 @@ const ApartmentCard = ({ data, onClick }) => {
         <div className="absolute top-4 left-4 bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full text-sm font-semibold text-[#0A2540]">
           {data.type}
         </div>
-        <button className="absolute top-4 right-4 p-2 bg-white/90 backdrop-blur-sm rounded-full text-gray-400 hover:text-[#FF5A5F] transition-colors">
-          <Heart size={18} />
+        <button
+          type="button"
+          aria-label={isFavorite ? 'Bỏ lưu căn hộ' : 'Lưu căn hộ'}
+          onClick={(event) => { event.stopPropagation(); onFavorite?.(data.id); }}
+          className={`absolute top-4 right-4 p-2 bg-white/90 backdrop-blur-sm rounded-full hover:text-[#FF5A5F] transition-colors ${isFavorite ? 'text-[#FF5A5F]' : 'text-gray-400'}`}
+        >
+          <Heart size={18} fill={isFavorite ? 'currentColor' : 'none'} />
         </button>
       </div>
       
@@ -229,7 +237,7 @@ const ApartmentCard = ({ data, onClick }) => {
   );
 };
 
-const Header = ({ currentRoute, navigate }) => {
+const Header = ({ currentRoute, navigate, profile, onSignOut }) => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
@@ -246,6 +254,9 @@ const Header = ({ currentRoute, navigate }) => {
     { name: 'Blog', route: 'blog' },
     { name: 'Liên hệ', route: 'contact' },
   ];
+  const isActive = (route) => currentRoute === route
+    || (route === 'listings' && currentRoute === 'detail')
+    || (route === 'blog' && currentRoute === 'blog-detail');
 
   return (
     <header className={`fixed w-full z-50 transition-all duration-300 ${isScrolled ? 'bg-white/80 backdrop-blur-md shadow-sm py-3' : 'bg-transparent py-5'}`}>
@@ -270,7 +281,7 @@ const Header = ({ currentRoute, navigate }) => {
               key={link.route}
               onClick={() => navigate(link.route)}
               className={`text-sm font-medium transition-colors hover:text-[#FF5A5F] ${
-                currentRoute === link.route 
+                isActive(link.route)
                   ? 'text-[#FF5A5F]' 
                   : (isScrolled || currentRoute !== 'home' ? 'text-gray-600' : 'text-white/90')
               }`}
@@ -289,6 +300,15 @@ const Header = ({ currentRoute, navigate }) => {
           >
             Ký gửi căn hộ
           </Button>
+          {profile ? (
+            <button onClick={() => navigate('account')} className="hidden md:block text-sm font-semibold text-[#0A2540] hover:text-[#FF5A5F]">
+              {profile.display_name}
+            </button>
+          ) : (
+            <button onClick={() => navigate('login')} className={`hidden md:block text-sm font-semibold ${isScrolled || currentRoute !== 'home' ? 'text-[#0A2540]' : 'text-white'}`}>
+              Đăng nhập
+            </button>
+          )}
           
           <button 
             className={`md:hidden p-2 ${isScrolled || currentRoute !== 'home' ? 'text-gray-900' : 'text-white'}`}
@@ -306,7 +326,7 @@ const Header = ({ currentRoute, navigate }) => {
             <button
               key={link.route}
               onClick={() => { navigate(link.route); setMobileMenuOpen(false); }}
-              className={`py-3 px-6 text-left font-medium ${currentRoute === link.route ? 'text-[#FF5A5F] bg-gray-50' : 'text-gray-800'}`}
+              className={`py-3 px-6 text-left font-medium ${isActive(link.route) ? 'text-[#FF5A5F] bg-gray-50' : 'text-gray-800'}`}
             >
               {link.name}
             </button>
@@ -315,6 +335,14 @@ const Header = ({ currentRoute, navigate }) => {
              <Button variant="primary" className="w-full py-3" onClick={() => { navigate('contact'); setMobileMenuOpen(false); }}>
               Ký gửi căn hộ
             </Button>
+            {profile ? (
+              <>
+                <button onClick={() => { navigate('saved'); setMobileMenuOpen(false); }} className="w-full py-3 text-left font-medium">Căn hộ đã lưu</button>
+                <button onClick={() => { onSignOut(); setMobileMenuOpen(false); }} className="w-full py-3 text-left font-medium text-red-600">Đăng xuất</button>
+              </>
+            ) : (
+              <button onClick={() => { navigate('login'); setMobileMenuOpen(false); }} className="w-full py-3 text-left font-medium">Đăng nhập</button>
+            )}
           </div>
         </div>
       )}
@@ -322,7 +350,7 @@ const Header = ({ currentRoute, navigate }) => {
   );
 };
 
-const Footer = () => (
+const Footer = ({ navigate }) => (
   <footer className="bg-[#0A2540] text-gray-300 pt-20 pb-10">
     <div className="container mx-auto px-4 md:px-8">
       <div className="grid grid-cols-1 md:grid-cols-4 gap-12 mb-16">
@@ -347,22 +375,22 @@ const Footer = () => (
         <div>
           <h4 className="text-white font-semibold mb-6">Khám phá</h4>
           <ul className="space-y-4 text-sm">
-            <li><a href="#" className="hover:text-[#FF5A5F] transition-colors">Căn hộ Quận 1</a></li>
-            <li><a href="#" className="hover:text-[#FF5A5F] transition-colors">Căn hộ Quận 2 (Thảo Điền)</a></li>
-            <li><a href="#" className="hover:text-[#FF5A5F] transition-colors">Căn hộ Quận 3</a></li>
-            <li><a href="#" className="hover:text-[#FF5A5F] transition-colors">Căn hộ Quận 7 (Phú Mỹ Hưng)</a></li>
-            <li><a href="#" className="hover:text-[#FF5A5F] transition-colors">Căn hộ Bình Thạnh</a></li>
+            <li><button onClick={() => navigate('listings', 'Quận 1')} className="hover:text-[#FF5A5F] transition-colors">Căn hộ Quận 1</button></li>
+            <li><button onClick={() => navigate('listings', 'Quận 2')} className="hover:text-[#FF5A5F] transition-colors">Căn hộ Quận 2 (Thảo Điền)</button></li>
+            <li><button onClick={() => navigate('listings', 'Quận 3')} className="hover:text-[#FF5A5F] transition-colors">Căn hộ Quận 3</button></li>
+            <li><button onClick={() => navigate('listings', 'Quận 7')} className="hover:text-[#FF5A5F] transition-colors">Căn hộ Quận 7 (Phú Mỹ Hưng)</button></li>
+            <li><button onClick={() => navigate('listings', 'Quận Bình Thạnh')} className="hover:text-[#FF5A5F] transition-colors">Căn hộ Bình Thạnh</button></li>
           </ul>
         </div>
 
         <div>
           <h4 className="text-white font-semibold mb-6">Thông tin</h4>
           <ul className="space-y-4 text-sm">
-            <li><a href="#" className="hover:text-[#FF5A5F] transition-colors">Về chúng tôi</a></li>
-            <li><a href="#" className="hover:text-[#FF5A5F] transition-colors">Quy trình thuê nhà</a></li>
-            <li><a href="#" className="hover:text-[#FF5A5F] transition-colors">Kinh nghiệm cho Expat</a></li>
-            <li><a href="#" className="hover:text-[#FF5A5F] transition-colors">Chính sách bảo mật</a></li>
-            <li><a href="#" className="hover:text-[#FF5A5F] transition-colors">Điều khoản sử dụng</a></li>
+            <li><button onClick={() => navigate('about')} className="hover:text-[#FF5A5F] transition-colors">Về chúng tôi</button></li>
+            <li><button onClick={() => navigate('rental-process')} className="hover:text-[#FF5A5F] transition-colors">Quy trình thuê nhà</button></li>
+            <li><button onClick={() => navigate('expat-guide')} className="hover:text-[#FF5A5F] transition-colors">Kinh nghiệm cho Expat</button></li>
+            <li><button onClick={() => navigate('privacy')} className="hover:text-[#FF5A5F] transition-colors">Chính sách bảo mật</button></li>
+            <li><button onClick={() => navigate('terms')} className="hover:text-[#FF5A5F] transition-colors">Điều khoản sử dụng</button></li>
           </ul>
         </div>
 
@@ -405,7 +433,7 @@ const FloatingContact = () => (
   </div>
 );
 
-const HomePage = ({ navigate, apartments }) => {
+const HomePage = ({ navigate, apartments, favoriteIds, onFavorite }) => {
   const featuredApts = apartments.filter(a => a.featured).slice(0, 3);
   const [districtQuery, setDistrictQuery] = useState('');
 
@@ -458,9 +486,9 @@ const HomePage = ({ navigate, apartments }) => {
           </form>
 
           <div className="mt-10 flex flex-wrap justify-center gap-4 text-sm font-medium animate-fade-in-up" style={{animationDelay: '0.3s'}}>
-            <span className="bg-white/20 backdrop-blur-sm px-4 py-2 rounded-full cursor-pointer hover:bg-white hover:text-[#0A2540] transition-colors" onClick={() => navigate('listings')}>Quận 1</span>
-            <span className="bg-white/20 backdrop-blur-sm px-4 py-2 rounded-full cursor-pointer hover:bg-white hover:text-[#0A2540] transition-colors" onClick={() => navigate('listings')}>Thảo Điền</span>
-            <span className="bg-white/20 backdrop-blur-sm px-4 py-2 rounded-full cursor-pointer hover:bg-white hover:text-[#0A2540] transition-colors" onClick={() => navigate('listings')}>Phú Mỹ Hưng</span>
+            <button className="bg-white/20 backdrop-blur-sm px-4 py-2 rounded-full cursor-pointer hover:bg-white hover:text-[#0A2540] transition-colors" onClick={() => navigate('listings', 'Quận 1')}>Quận 1</button>
+            <button className="bg-white/20 backdrop-blur-sm px-4 py-2 rounded-full cursor-pointer hover:bg-white hover:text-[#0A2540] transition-colors" onClick={() => navigate('listings', 'Quận 2')}>Thảo Điền</button>
+            <button className="bg-white/20 backdrop-blur-sm px-4 py-2 rounded-full cursor-pointer hover:bg-white hover:text-[#0A2540] transition-colors" onClick={() => navigate('listings', 'Quận 7')}>Phú Mỹ Hưng</button>
           </div>
         </div>
       </section>
@@ -480,7 +508,7 @@ const HomePage = ({ navigate, apartments }) => {
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {featuredApts.map(apt => (
-              <ApartmentCard key={apt.id} data={apt} onClick={(id) => navigate('detail', id)} />
+              <ApartmentCard key={apt.id} data={apt} onClick={(id) => navigate('detail', id)} isFavorite={favoriteIds.includes(String(apt.id))} onFavorite={onFavorite} />
             ))}
           </div>
         </div>
@@ -515,10 +543,10 @@ const HomePage = ({ navigate, apartments }) => {
   );
 };
 
-const ListingsPage = ({ navigate, apartments, initialDistrict = '' }) => {
-  const [filters, setFilters] = useState({
-    district: initialDistrict, type: '', priceRange: '', amenities: []
-  });
+const ListingsPage = ({ navigate, apartments, initialFilters, onFiltersChange, favoriteIds, onFavorite }) => {
+  const [filters, setFilters] = useState(initialFilters);
+  const [sort, setSort] = useState('recommended');
+  useEffect(() => { onFiltersChange(filters); }, [filters]);
   
   const handleAmenityChange = (amenity) => {
     setFilters(prev => ({
@@ -530,7 +558,7 @@ const ListingsPage = ({ navigate, apartments, initialDistrict = '' }) => {
   };
 
   const filteredApts = useMemo(() => {
-    return apartments.filter(apt => {
+    const result = apartments.filter(apt => {
       if (
         filters.district &&
         apt.district.replace(/^Quận\s+/i, '') !== filters.district.replace(/^Quận\s+/i, '')
@@ -547,7 +575,13 @@ const ListingsPage = ({ navigate, apartments, initialDistrict = '' }) => {
       }
       return true;
     });
-  }, [filters]);
+    return [...result].sort((a, b) => {
+      if (sort === 'price-asc') return a.price - b.price;
+      if (sort === 'price-desc') return b.price - a.price;
+      if (sort === 'newest') return String(b.created_at || '').localeCompare(String(a.created_at || ''));
+      return Number(b.featured) - Number(a.featured) || (b.views || 0) - (a.views || 0);
+    });
+  }, [filters, apartments, sort]);
 
   return (
     <div className="min-h-screen bg-gray-50 pt-24 pb-20">
@@ -639,18 +673,18 @@ const ListingsPage = ({ navigate, apartments, initialDistrict = '' }) => {
           <div className="flex-1">
             <div className="flex justify-between items-center mb-6 bg-white p-4 rounded-2xl shadow-sm border border-gray-100">
                <span className="text-sm text-gray-500">Sắp xếp theo:</span>
-               <select className="border-none bg-transparent font-medium text-[#0A2540] outline-none cursor-pointer">
-                 <option>Đề xuất</option>
-                 <option>Giá thấp - cao</option>
-                 <option>Giá cao - thấp</option>
-                 <option>Mới nhất</option>
+               <select value={sort} onChange={event => setSort(event.target.value)} className="border-none bg-transparent font-medium text-[#0A2540] outline-none cursor-pointer">
+                 <option value="recommended">Đề xuất</option>
+                 <option value="price-asc">Giá thấp - cao</option>
+                 <option value="price-desc">Giá cao - thấp</option>
+                 <option value="newest">Mới nhất</option>
                </select>
             </div>
 
             {filteredApts.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
                 {filteredApts.map(apt => (
-                  <ApartmentCard key={apt.id} data={apt} onClick={(id) => navigate('detail', id)} />
+                  <ApartmentCard key={apt.id} data={apt} onClick={(id) => navigate('detail', id)} isFavorite={favoriteIds.includes(String(apt.id))} onFavorite={onFavorite} />
                 ))}
               </div>
             ) : (
@@ -669,13 +703,35 @@ const ListingsPage = ({ navigate, apartments, initialDistrict = '' }) => {
   );
 };
 
-const DetailPage = ({ id, navigate, apartments }) => {
+const DetailPage = ({ id, navigate, apartments, favoriteIds, onFavorite }) => {
   const [showConsultationPhone, setShowConsultationPhone] = useState(false);
   const [showGallery, setShowGallery] = useState(false);
-  const apt = apartments.find(a => a.id === id);
+  const [moveInDate, setMoveInDate] = useState('');
+  const [leaseTerm, setLeaseTerm] = useState('6 tháng');
+  const [notice, setNotice] = useState('');
+  const apt = apartments.find(a => String(a.id) === String(id));
   if (!apt) return <div>Not found</div>;
 
   const similarApts = apartments.filter(a => a.district === apt.district && a.id !== apt.id).slice(0, 3);
+  const isFavorite = favoriteIds.includes(String(apt.id));
+  const shareApartment = async () => {
+    const shareData = { title: apt.title, text: `Xem căn hộ ${apt.title} tại Saigon Retreats`, url: window.location.href };
+    try {
+      if (navigator.share) await navigator.share(shareData);
+      else {
+        await navigator.clipboard.writeText(window.location.href);
+        setNotice('Đã sao chép đường dẫn căn hộ.');
+      }
+    } catch {}
+  };
+  const openBookingZalo = () => {
+    if (!moveInDate) {
+      setNotice('Vui lòng chọn ngày nhận phòng trước khi liên hệ Zalo.');
+      return;
+    }
+    setNotice(`Ngày nhận phòng ${moveInDate}, thời hạn ${leaseTerm}. Thông tin chưa tự gửi; vui lòng nhắn trực tiếp cho Saigon Retreats trên Zalo.`);
+    window.open(CONTACT.zalo, '_blank', 'noopener,noreferrer');
+  };
 
   return (
     <div className="min-h-screen bg-white pt-20">
@@ -691,8 +747,8 @@ const DetailPage = ({ id, navigate, apartments }) => {
             </div>
           </div>
           <div className="flex gap-3">
-            <Button variant="secondary" className="px-4 py-2 gap-2"><Share size={16} /> Chia sẻ</Button>
-            <Button variant="secondary" className="px-4 py-2 gap-2"><Heart size={16} /> Lưu</Button>
+            <Button variant="secondary" onClick={shareApartment} className="px-4 py-2 gap-2"><Share size={16} /> Chia sẻ</Button>
+            <Button variant="secondary" onClick={() => onFavorite(apt.id)} className={`px-4 py-2 gap-2 ${isFavorite ? 'text-[#FF5A5F] border-[#FF5A5F]' : ''}`}><Heart size={16} fill={isFavorite ? 'currentColor' : 'none'} /> {isFavorite ? 'Đã lưu' : 'Lưu'}</Button>
           </div>
         </div>
 
@@ -792,9 +848,17 @@ const DetailPage = ({ id, navigate, apartments }) => {
             {/* Map Placeholder */}
             <div className="mb-10">
                <h3 className="text-xl font-bold text-[#0A2540] mb-4">Vị trí trên bản đồ</h3>
-               <div className="w-full h-[300px] bg-slate-100 rounded-2xl flex flex-col items-center justify-center text-gray-400 border border-gray-200">
-                  <Map size={48} className="mb-4 opacity-50" />
-                  <p>Tích hợp Google Maps API tại đây</p>
+               <div className="w-full h-[300px] rounded-2xl overflow-hidden border border-gray-200 relative">
+                 <iframe
+                   title={`Bản đồ khu vực ${apt.district}`}
+                   src={`https://www.google.com/maps?q=${encodeURIComponent(`${apt.district}, TP.HCM`)}&output=embed`}
+                   className="w-full h-full border-0"
+                   loading="lazy"
+                   referrerPolicy="no-referrer-when-downgrade"
+                 />
+                 <a target="_blank" rel="noreferrer" href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${apt.district}, TP.HCM`)}`} className="absolute bottom-4 right-4 bg-white px-4 py-2 rounded-xl shadow-md text-sm font-semibold text-[#0A2540]">
+                   Mở Google Maps
+                 </a>
                </div>
             </div>
           </div>
@@ -813,11 +877,11 @@ const DetailPage = ({ id, navigate, apartments }) => {
                  <div className="flex border-b border-gray-300">
                     <div className="p-3 border-r border-gray-300 flex-1">
                        <label className="text-[10px] font-bold uppercase text-gray-800 block mb-1">Ngày nhận phòng</label>
-                       <input type="date" className="w-full text-sm outline-none text-gray-600" />
+                       <input value={moveInDate} min={new Date().toISOString().slice(0, 10)} onChange={event => setMoveInDate(event.target.value)} type="date" className="w-full text-sm outline-none text-gray-600" />
                     </div>
                     <div className="p-3 flex-1">
                        <label className="text-[10px] font-bold uppercase text-gray-800 block mb-1">Thời hạn thuê</label>
-                       <select className="w-full text-sm outline-none text-gray-600 bg-transparent">
+                       <select value={leaseTerm} onChange={event => setLeaseTerm(event.target.value)} className="w-full text-sm outline-none text-gray-600 bg-transparent">
                          <option>6 tháng</option>
                          <option>1 năm</option>
                          <option>2 năm</option>
@@ -826,7 +890,7 @@ const DetailPage = ({ id, navigate, apartments }) => {
                  </div>
               </div>
 
-              <Button variant="accent" className="w-full py-4 text-lg font-bold mb-4">Đặt lịch xem phòng</Button>
+              <Button variant="accent" onClick={openBookingZalo} className="w-full py-4 text-lg font-bold mb-4">Đặt lịch xem phòng</Button>
               {showConsultationPhone ? (
                 <a
                   href={CONTACT.phoneHref}
@@ -845,6 +909,7 @@ const DetailPage = ({ id, navigate, apartments }) => {
               )}
               
               <p className="text-center text-sm text-gray-500">Không thu phí dịch vụ từ khách thuê</p>
+              {notice && <p className="mt-3 text-center text-sm text-[#FF5A5F]" role="status">{notice}</p>}
               
               <div className="mt-6 pt-6 border-t border-gray-200">
                 <div className="flex items-center justify-between text-sm mb-3 text-gray-600">
@@ -868,7 +933,7 @@ const DetailPage = ({ id, navigate, apartments }) => {
             <h2 className="text-2xl font-bold text-[#0A2540] mb-8">Căn hộ tương tự tại {apt.district}</h2>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {similarApts.map(sim => (
-                <ApartmentCard key={sim.id} data={sim} onClick={(id) => navigate('detail', id)} />
+                <ApartmentCard key={sim.id} data={sim} onClick={(id) => navigate('detail', id)} isFavorite={favoriteIds.includes(String(sim.id))} onFavorite={onFavorite} />
               ))}
             </div>
           </div>
@@ -1100,7 +1165,7 @@ const ContactPage = () => (
 
         <div className="bg-white rounded-3xl p-8 border border-gray-100 shadow-[0_8px_30px_rgb(0,0,0,0.08)]">
           <h3 className="text-2xl font-bold text-[#0A2540] mb-6">Gửi tin nhắn</h3>
-          <form className="space-y-4" onSubmit={(e) => e.preventDefault()}>
+          <form className="space-y-4" onSubmit={(e) => { e.preventDefault(); window.open(CONTACT.zalo, '_blank', 'noopener,noreferrer'); }}>
             <div className="grid grid-cols-2 gap-4">
                <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Họ & Tên</label>
@@ -1123,7 +1188,8 @@ const ContactPage = () => (
                <label className="block text-sm font-medium text-gray-700 mb-2">Lời nhắn</label>
                <textarea rows="4" className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:border-[#0A2540]" placeholder="Bạn cần hỗ trợ thêm thông tin gì?"></textarea>
             </div>
-            <Button variant="accent" className="w-full py-4 text-lg mt-2">Gửi yêu cầu ngay</Button>
+            <p className="text-xs text-gray-500">Thông tin trong biểu mẫu không tự động gửi. Sau khi bấm, vui lòng nhắn trực tiếp cho chúng tôi trên Zalo.</p>
+            <Button type="submit" variant="accent" className="w-full py-4 text-lg mt-2">Liên hệ qua Zalo</Button>
           </form>
         </div>
       </div>
@@ -1131,8 +1197,165 @@ const ContactPage = () => (
   </div>
 );
 
+const AuthPage = ({ mode, navigate }) => {
+  const isRegister = mode === 'register';
+  const [form, setForm] = useState({ username: '', displayName: '', email: '', password: '', confirmPassword: '' });
+  const [status, setStatus] = useState('');
+  const [busy, setBusy] = useState(false);
+  const update = (key, value) => setForm(current => ({ ...current, [key]: value }));
+  const submit = async (event) => {
+    event.preventDefault();
+    if (isRegister && form.password !== form.confirmPassword) return setStatus('Mật khẩu xác nhận chưa khớp.');
+    setBusy(true); setStatus('');
+    try {
+      await usernameAuth({
+        action: isRegister ? 'register' : 'login',
+        username: form.username,
+        displayName: form.displayName,
+        email: form.email,
+        password: form.password,
+      });
+      setStatus(isRegister ? 'Đăng ký thành công. Nếu được yêu cầu, vui lòng xác nhận email.' : 'Đăng nhập thành công.');
+      setTimeout(() => navigate('account'), 500);
+    } catch (error) {
+      setStatus(error.message || 'Không thể xử lý yêu cầu.');
+    } finally { setBusy(false); }
+  };
+  const recover = async () => {
+    if (!form.username) return setStatus('Vui lòng nhập tên đăng nhập trước.');
+    setBusy(true);
+    try {
+      await usernameAuth({ action: 'recover', username: form.username, redirectTo: `${window.location.origin}/account` });
+      setStatus('Đã gửi hướng dẫn đặt lại mật khẩu đến email khôi phục.');
+    } catch (error) { setStatus(error.message); }
+    finally { setBusy(false); }
+  };
+  const googleLogin = async () => {
+    if (!supabase) return setStatus('Đăng nhập chưa được cấu hình.');
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: { redirectTo: `${window.location.origin}/account` },
+    });
+    if (error) setStatus(error.message);
+  };
+  return (
+    <div className="min-h-screen pt-28 pb-20 bg-gray-50 px-4">
+      <div className="max-w-md mx-auto bg-white rounded-3xl p-8 border shadow-sm">
+        <h1 className="text-3xl font-bold text-[#0A2540] mb-2">{isRegister ? 'Tạo tài khoản' : 'Đăng nhập'}</h1>
+        <p className="text-gray-500 mb-7">Lưu và quản lý những căn hộ bạn quan tâm.</p>
+        <button type="button" onClick={googleLogin} className="w-full py-3 rounded-xl border font-semibold mb-5 hover:bg-gray-50">Tiếp tục với Google</button>
+        <div className="flex items-center gap-3 text-xs text-gray-400 mb-5"><span className="h-px bg-gray-200 flex-1" />hoặc<span className="h-px bg-gray-200 flex-1" /></div>
+        <form onSubmit={submit} className="space-y-4">
+          {isRegister && <input required value={form.displayName} onChange={e => update('displayName', e.target.value)} className="w-full p-3 border rounded-xl" placeholder="Họ và tên" />}
+          <input required value={form.username} onChange={e => update('username', e.target.value.toLowerCase())} className="w-full p-3 border rounded-xl" placeholder="Tên đăng nhập" pattern="[a-z0-9_]{3,30}" />
+          {isRegister && <input required type="email" value={form.email} onChange={e => update('email', e.target.value)} className="w-full p-3 border rounded-xl" placeholder="Email khôi phục" />}
+          <input required minLength={8} type="password" value={form.password} onChange={e => update('password', e.target.value)} className="w-full p-3 border rounded-xl" placeholder="Mật khẩu (tối thiểu 8 ký tự)" />
+          {isRegister && <input required minLength={8} type="password" value={form.confirmPassword} onChange={e => update('confirmPassword', e.target.value)} className="w-full p-3 border rounded-xl" placeholder="Xác nhận mật khẩu" />}
+          {status && <p role="status" className="text-sm text-[#FF5A5F]">{status}</p>}
+          <Button disabled={busy} type="submit" variant="accent" className="w-full py-3">{busy ? 'Đang xử lý...' : (isRegister ? 'Đăng ký' : 'Đăng nhập')}</Button>
+        </form>
+        {!isRegister && <button disabled={busy} onClick={recover} className="mt-4 text-sm text-gray-500 hover:text-[#FF5A5F]">Quên mật khẩu?</button>}
+        <button onClick={() => navigate(isRegister ? 'login' : 'register')} className="block mt-6 text-sm font-semibold text-[#0A2540]">
+          {isRegister ? 'Đã có tài khoản? Đăng nhập' : 'Chưa có tài khoản? Đăng ký'}
+        </button>
+      </div>
+    </div>
+  );
+};
+
+const SavedPage = ({ apartments, favoriteIds, navigate, onFavorite, profile }) => {
+  if (!profile) return <AuthPage mode="login" navigate={navigate} />;
+  const saved = apartments.filter(item => favoriteIds.includes(String(item.id)));
+  return (
+    <div className="min-h-screen pt-28 pb-20 bg-gray-50">
+      <div className="container mx-auto px-4 md:px-8">
+        <h1 className="text-4xl font-bold text-[#0A2540] mb-2">Căn hộ đã lưu</h1>
+        <p className="text-gray-500 mb-8">{saved.length} căn hộ trong danh sách của bạn</p>
+        {saved.length ? <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-6">{saved.map(apt => (
+          <ApartmentCard key={apt.id} data={apt} onClick={id => navigate('detail', id)} isFavorite onFavorite={onFavorite} />
+        ))}</div> : <div className="bg-white rounded-2xl p-12 text-center"><Heart className="mx-auto mb-4 text-gray-300" size={40} /><p>Bạn chưa lưu căn hộ nào.</p></div>}
+      </div>
+    </div>
+  );
+};
+
+const AccountPage = ({ profile, navigate, onSignOut }) => {
+  if (!profile) return <AuthPage mode="login" navigate={navigate} />;
+  return (
+    <div className="min-h-screen pt-28 pb-20 bg-gray-50 px-4">
+      <div className="max-w-xl mx-auto bg-white rounded-3xl p-8 border">
+        <h1 className="text-3xl font-bold text-[#0A2540] mb-6">Tài khoản của tôi</h1>
+        <div className="space-y-4 text-gray-600">
+          <p><strong className="text-[#0A2540]">Tên:</strong> {profile.display_name}</p>
+          <p><strong className="text-[#0A2540]">Tên đăng nhập:</strong> {profile.username}</p>
+        </div>
+        <div className="flex gap-3 mt-8">
+          <Button onClick={() => navigate('saved')} className="px-5 py-3">Căn hộ đã lưu</Button>
+          <Button onClick={onSignOut} variant="secondary" className="px-5 py-3">Đăng xuất</Button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const INFO_PAGES = {
+  'rental-process': {
+    title: 'Quy trình thuê nhà',
+    intro: 'Saigon Retreats hỗ trợ bạn từ lúc chọn căn đến khi nhận bàn giao.',
+    sections: [
+      ['1. Xác định nhu cầu', 'Chọn khu vực, ngân sách, loại căn hộ, ngày chuyển vào và các tiện ích cần thiết.'],
+      ['2. Xem căn hộ', 'Liên hệ Zalo để xác nhận tình trạng căn và sắp xếp thời gian xem thực tế.'],
+      ['3. Thỏa thuận và hợp đồng', 'Kiểm tra giá thuê, tiền cọc, thời hạn thuê, phí quản lý và điều kiện hoàn cọc trước khi ký.'],
+      ['4. Bàn giao', 'Hai bên lập biên bản hiện trạng, danh sách nội thất, chỉ số điện nước và số chìa khóa được giao.'],
+    ],
+  },
+  'expat-guide': {
+    title: 'Kinh nghiệm thuê nhà cho người nước ngoài',
+    intro: 'Những lưu ý cơ bản giúp người nước ngoài thuê căn hộ thuận lợi tại TP.HCM.',
+    sections: [
+      ['Giấy tờ và tạm trú', 'Chuẩn bị hộ chiếu, thị thực hoặc giấy tờ cư trú hợp lệ và xác nhận chủ nhà hỗ trợ khai báo tạm trú.'],
+      ['Hợp đồng song ngữ', 'Nên sử dụng hợp đồng có nội dung rõ ràng về tiền thuê, tiền cọc, thời hạn báo trước và trách nhiệm sửa chữa.'],
+      ['Chi phí hàng tháng', 'Hỏi rõ phí quản lý, điện, nước, internet, gửi xe và quy định sử dụng tiện ích của tòa nhà.'],
+    ],
+  },
+  privacy: {
+    title: 'Chính sách bảo mật',
+    intro: 'Saigon Retreats tôn trọng quyền riêng tư và chỉ sử dụng dữ liệu để cung cấp chức năng website.',
+    sections: [
+      ['Dữ liệu được thu thập', 'Tài khoản có thể gồm tên hiển thị, tên đăng nhập, email khôi phục và danh sách căn hộ đã lưu.'],
+      ['Mục đích sử dụng', 'Dữ liệu được dùng để xác thực, khôi phục tài khoản và đồng bộ danh sách yêu thích.'],
+      ['Liên hệ qua Zalo', 'Thông tin nhập tại biểu mẫu không được website lưu hoặc tự gửi; khách chủ động trao đổi qua Zalo.'],
+      ['Quyền của bạn', 'Bạn có thể liên hệ Saigon Retreats để yêu cầu hỗ trợ kiểm tra hoặc xóa tài khoản.'],
+    ],
+  },
+  terms: {
+    title: 'Điều khoản sử dụng',
+    intro: 'Khi sử dụng website, bạn đồng ý với các nguyên tắc cơ bản dưới đây.',
+    sections: [
+      ['Thông tin căn hộ', 'Giá, tình trạng và hình ảnh có thể thay đổi; khách cần xác nhận lại trước khi đặt cọc hoặc ký hợp đồng.'],
+      ['Tài khoản', 'Người dùng chịu trách nhiệm bảo mật thông tin đăng nhập và không sử dụng website cho mục đích trái pháp luật.'],
+      ['Giao dịch', 'Website hỗ trợ kết nối và cung cấp thông tin; mọi thỏa thuận thuê cần được thể hiện trong hợp đồng giữa các bên.'],
+      ['Giới hạn trách nhiệm', 'Nội dung cẩm nang chỉ mang tính tham khảo và không thay thế tư vấn pháp lý chuyên môn.'],
+    ],
+  },
+};
+
+const InfoPage = ({ page }) => {
+  const content = INFO_PAGES[page];
+  return (
+    <div className="min-h-screen pt-28 pb-20 bg-white">
+      <article className="max-w-3xl mx-auto px-4">
+        <h1 className="text-4xl md:text-5xl font-bold text-[#0A2540] mb-5">{content.title}</h1>
+        <p className="text-xl text-gray-500 leading-8 mb-10">{content.intro}</p>
+        {content.sections.map(([title, text]) => <section key={title} className="mb-8"><h2 className="text-2xl font-bold text-[#0A2540] mb-3">{title}</h2><p className="text-gray-600 leading-7">{text}</p></section>)}
+      </article>
+    </div>
+  );
+};
+
 const AdminPage = ({ apartments, reloadApartments }) => {
   const [session, setSession] = useState(null);
+  const [adminAllowed, setAdminAllowed] = useState(null);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [status, setStatus] = useState('');
@@ -1147,8 +1370,16 @@ const AdminPage = ({ apartments, reloadApartments }) => {
 
   useEffect(() => {
     if (!supabase) return;
-    supabase.auth.getSession().then(({ data }) => setSession(data.session));
-    const { data } = supabase.auth.onAuthStateChange((_event, nextSession) => setSession(nextSession));
+    const updateSession = async (nextSession) => {
+      setSession(nextSession);
+      if (!nextSession) return setAdminAllowed(null);
+      try {
+        const profileData = await getMyProfile();
+        setAdminAllowed(profileData?.role === 'admin');
+      } catch { setAdminAllowed(false); }
+    };
+    supabase.auth.getSession().then(({ data }) => updateSession(data.session));
+    const { data } = supabase.auth.onAuthStateChange((_event, nextSession) => setTimeout(() => updateSession(nextSession), 0));
     return () => data.subscription.unsubscribe();
   }, []);
 
@@ -1306,6 +1537,14 @@ const AdminPage = ({ apartments, reloadApartments }) => {
     );
   }
 
+  if (adminAllowed === false) {
+    return <div className="min-h-screen flex items-center justify-center bg-slate-50 px-4"><div className="max-w-md bg-white p-8 rounded-3xl border text-center"><ShieldCheck className="mx-auto mb-4 text-red-500" size={42} /><h1 className="text-2xl font-bold text-[#0A2540] mb-3">Không có quyền quản trị</h1><p className="text-gray-500 mb-6">Tài khoản này chỉ được sử dụng cho chức năng khách hàng.</p><Button onClick={() => supabase?.auth.signOut()} className="px-5 py-3">Đăng xuất</Button></div></div>;
+  }
+
+  if (adminAllowed === null) {
+    return <div className="min-h-screen flex items-center justify-center"><LoaderCircle className="animate-spin text-[#FF5A5F]" size={34} /></div>;
+  }
+
   return (
     <div className="min-h-screen bg-slate-50 pb-20">
       <div className="bg-[#0A2540] text-white">
@@ -1423,55 +1662,163 @@ const AdminPage = ({ apartments, reloadApartments }) => {
   );
 };
 
+const readLocation = () => {
+  const path = window.location.pathname.replace(/\/+$/, '') || '/';
+  const query = new URLSearchParams(window.location.search);
+  if (path === '/') return { route: 'home', id: null, district: '' };
+  if (path === '/apartments') return { route: 'listings', id: null, district: query.get('district') || '' };
+  if (path.startsWith('/apartments/')) return { route: 'detail', id: decodeURIComponent(path.split('/')[2]), district: '' };
+  if (path === '/blog') return { route: 'blog', id: null, district: '' };
+  if (path.startsWith('/blog/')) return { route: 'blog-detail', id: decodeURIComponent(path.split('/')[2]), district: '' };
+  const routes = {
+    '/about': 'about', '/contact': 'contact', '/admin': 'admin', '/saved': 'saved',
+    '/login': 'login', '/register': 'register', '/account': 'account',
+    '/rental-process': 'rental-process', '/expat-guide': 'expat-guide',
+    '/privacy': 'privacy', '/terms': 'terms',
+  };
+  return { route: routes[path] || 'not-found', id: null, district: '' };
+};
+
+const pathForRoute = (route, id) => {
+  if (route === 'home') return '/';
+  if (route === 'listings') return `/apartments${id ? `?district=${encodeURIComponent(id)}` : ''}`;
+  if (route === 'detail') return `/apartments/${encodeURIComponent(id)}`;
+  if (route === 'blog') return '/blog';
+  if (route === 'blog-detail') return `/blog/${encodeURIComponent(id)}`;
+  const paths = {
+    about: '/about', contact: '/contact', admin: '/admin', saved: '/saved',
+    login: '/login', register: '/register', account: '/account',
+    'rental-process': '/rental-process', 'expat-guide': '/expat-guide',
+    privacy: '/privacy', terms: '/terms',
+  };
+  return paths[route] || '/';
+};
+
+const NotFoundPage = ({ navigate }) => (
+  <div className="min-h-screen pt-32 text-center px-4">
+    <h1 className="text-5xl font-bold text-[#0A2540] mb-4">Không tìm thấy trang</h1>
+    <p className="text-gray-500 mb-8">Đường dẫn này không tồn tại hoặc đã được thay đổi.</p>
+    <Button onClick={() => navigate('home')} className="px-6 py-3">Về trang chủ</Button>
+  </div>
+);
+
 export default function App() {
-  const [currentRoute, setCurrentRoute] = useState(() => window.location.pathname.startsWith('/admin') ? 'admin' : 'home');
-  const [selectedId, setSelectedId] = useState(null);
-  const [listingDistrict, setListingDistrict] = useState('');
+  const initialLocation = readLocation();
+  const [currentRoute, setCurrentRoute] = useState(initialLocation.route);
+  const [selectedId, setSelectedId] = useState(initialLocation.id);
+  const [listingDistrict, setListingDistrict] = useState(initialLocation.district);
+  const [listingFilters, setListingFilters] = useState({
+    district: initialLocation.district, type: '', priceRange: '', amenities: []
+  });
   const [apartments, setApartments] = useState(DEFAULT_APARTMENTS.map(item => ({ ...item, isDefault: true })));
+  const [profile, setProfile] = useState(null);
+  const [favoriteIds, setFavoriteIds] = useState([]);
+  const [dataStatus, setDataStatus] = useState('');
 
   const reloadApartments = async () => {
     try {
       const data = await listApartments();
       setApartments([...data, ...DEFAULT_APARTMENTS.map(item => ({ ...item, isDefault: true }))]);
+      setDataStatus('');
     } catch {
-      // The bundled sample listings remain available if Supabase is not configured or unavailable.
+      setDataStatus('Không thể tải dữ liệu mới. Website đang hiển thị danh sách dự phòng.');
     }
   };
 
   useEffect(() => { reloadApartments(); }, []);
+  useEffect(() => {
+    if (!supabase) return;
+    const refreshAccount = async (session) => {
+      if (!session) { setProfile(null); setFavoriteIds([]); return; }
+      try {
+        const [nextProfile, nextFavorites] = await Promise.all([getMyProfile(), listFavoriteIds()]);
+        setProfile(nextProfile);
+        setFavoriteIds(nextFavorites.map(String));
+      } catch {
+        setProfile(null); setFavoriteIds([]);
+      }
+    };
+    supabase.auth.getSession().then(({ data }) => refreshAccount(data.session));
+    const { data } = supabase.auth.onAuthStateChange((_event, session) => setTimeout(() => refreshAccount(session), 0));
+    return () => data.subscription.unsubscribe();
+  }, []);
+  useEffect(() => {
+    const onPopState = () => {
+      const location = readLocation();
+      setCurrentRoute(location.route);
+      setSelectedId(location.id);
+      setListingDistrict(location.district);
+      if (location.route === 'listings' && location.district) {
+        setListingFilters(current => ({ ...current, district: location.district }));
+      }
+    };
+    window.addEventListener('popstate', onPopState);
+    return () => window.removeEventListener('popstate', onPopState);
+  }, []);
 
   useScrollToTop(currentRoute);
   useScrollToTop(selectedId);
 
   const navigate = (route, id = null) => {
+    window.history.pushState({}, '', pathForRoute(route, id));
     setCurrentRoute(route);
-    if (route === 'listings') setListingDistrict(id || '');
+    if (route === 'listings') {
+      setListingDistrict(id || '');
+      if (id) setListingFilters(current => ({ ...current, district: id }));
+    }
     if (id && route !== 'listings') setSelectedId(id);
+  };
+
+  const toggleFavorite = async (apartmentId) => {
+    if (!profile) { navigate('login'); return; }
+    const id = String(apartmentId);
+    const nextFavorite = !favoriteIds.includes(id);
+    setFavoriteIds(current => nextFavorite ? [...current, id] : current.filter(item => item !== id));
+    try {
+      await setFavorite(id, nextFavorite);
+    } catch (error) {
+      setFavoriteIds(current => nextFavorite ? current.filter(item => item !== id) : [...current, id]);
+      window.alert(error.message || 'Không thể cập nhật danh sách đã lưu.');
+    }
+  };
+
+  const signOut = async () => {
+    await supabase?.auth.signOut();
+    navigate('home');
   };
 
   const renderContent = () => {
     switch (currentRoute) {
-      case 'home': return <HomePage navigate={navigate} apartments={apartments} />;
-      case 'listings': return <ListingsPage navigate={navigate} apartments={apartments} initialDistrict={listingDistrict} />;
-      case 'detail': return <DetailPage id={selectedId} navigate={navigate} apartments={apartments} />;
+      case 'home': return <HomePage navigate={navigate} apartments={apartments} favoriteIds={favoriteIds} onFavorite={toggleFavorite} />;
+      case 'listings': return <ListingsPage navigate={navigate} apartments={apartments} initialFilters={listingFilters} onFiltersChange={setListingFilters} favoriteIds={favoriteIds} onFavorite={toggleFavorite} />;
+      case 'detail': return <DetailPage id={selectedId} navigate={navigate} apartments={apartments} favoriteIds={favoriteIds} onFavorite={toggleFavorite} />;
       case 'about': return <AboutPage />;
       case 'blog': return <BlogPage navigate={navigate} />;
       case 'blog-detail': return <BlogDetailPage id={selectedId} navigate={navigate} />;
       case 'contact': return <ContactPage />;
+      case 'login': return <AuthPage mode="login" navigate={navigate} />;
+      case 'register': return <AuthPage mode="register" navigate={navigate} />;
+      case 'saved': return <SavedPage apartments={apartments} favoriteIds={favoriteIds} navigate={navigate} onFavorite={toggleFavorite} profile={profile} />;
+      case 'account': return <AccountPage profile={profile} navigate={navigate} onSignOut={signOut} />;
+      case 'rental-process':
+      case 'expat-guide':
+      case 'privacy':
+      case 'terms': return <InfoPage page={currentRoute} />;
       case 'admin': return <AdminPage apartments={apartments} reloadApartments={reloadApartments} />;
-      default: return <HomePage navigate={navigate} apartments={apartments} />;
+      default: return <NotFoundPage navigate={navigate} />;
     }
   };
 
   return (
     <div className="font-sans text-gray-900 selection:bg-[#FF5A5F] selection:text-white flex flex-col min-h-screen">
-      {currentRoute !== 'admin' && <Header currentRoute={currentRoute} navigate={navigate} />}
+      {currentRoute !== 'admin' && <Header currentRoute={currentRoute} navigate={navigate} profile={profile} onSignOut={signOut} />}
       
       <main className="flex-grow">
+        {dataStatus && <div className="fixed top-20 left-1/2 -translate-x-1/2 z-[60] bg-amber-50 text-amber-800 px-4 py-2 rounded-xl shadow text-sm">{dataStatus}</div>}
         {renderContent()}
       </main>
 
-      {currentRoute !== 'admin' && <Footer />}
+      {currentRoute !== 'admin' && <Footer navigate={navigate} />}
       {currentRoute !== 'admin' && <FloatingContact />}
 
       {/* Global Styles for Animations */}
