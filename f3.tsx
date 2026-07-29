@@ -4,7 +4,7 @@ import {
   Wifi, Coffee, Dumbbell, PawPrint, Waves, Wind, ChevronRight, 
   Menu, X, Phone, Mail, CheckCircle2, Star, Clock, 
   ArrowRight, ShieldCheck, Heart, Share, PlayCircle,
-  Facebook, Instagram, Twitter, Map, Navigation, Upload, Trash2,
+  Facebook, Instagram, Map, Navigation, Upload, Trash2,
   LogOut, Plus, LoaderCircle, Pencil, Save, Building2, TrainFront
 } from 'lucide-react';
 import { hasSupabaseConfig, listApartments, supabase, uploadApartmentImages } from './src/lib/supabase';
@@ -27,6 +27,16 @@ const DISTRICTS = [
   'Quận Bình Thạnh', 'Quận Phú Nhuận', 'Quận Gò Vấp',
   'Quận Tân Bình', 'Quận Tân Phú'
 ];
+
+const CONTACT = {
+  facebook: 'https://www.facebook.com/profile.php?id=61591846062987',
+  instagram: 'https://www.instagram.com/_khoathucnam/',
+  zalo: 'https://zalo.me/0909180942',
+  phoneDisplay: '0909 180 942',
+  phoneHref: 'tel:+84909180942',
+  email: 'nguyenthucnamkhoa3110@gmail.com',
+  address: 'Số 2 Trần Quang Khải, Phường Tân Định, Quận 1, TP.HCM'
+};
 
 const DEFAULT_APARTMENTS = [
   {
@@ -329,9 +339,8 @@ const Footer = () => (
             Chúng tôi định hình lại cách bạn tìm kiếm và trải nghiệm không gian sống tại TP.HCM. Cung cấp căn hộ cao cấp cho Expat, chuyên gia và người trẻ hiện đại.
           </p>
           <div className="flex items-center gap-4">
-            <a href="#" className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center hover:bg-[#FF5A5F] hover:text-white transition-all"><Facebook size={18} /></a>
-            <a href="#" className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center hover:bg-[#FF5A5F] hover:text-white transition-all"><Instagram size={18} /></a>
-            <a href="#" className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center hover:bg-[#FF5A5F] hover:text-white transition-all"><Twitter size={18} /></a>
+            <a href={CONTACT.facebook} target="_blank" rel="noreferrer" aria-label="Facebook" className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center hover:bg-[#FF5A5F] hover:text-white transition-all"><Facebook size={18} /></a>
+            <a href={CONTACT.instagram} target="_blank" rel="noreferrer" aria-label="Instagram" className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center hover:bg-[#FF5A5F] hover:text-white transition-all"><Instagram size={18} /></a>
           </div>
         </div>
         
@@ -362,15 +371,15 @@ const Footer = () => (
           <ul className="space-y-4 text-sm">
             <li className="flex items-start gap-3">
               <MapPin size={18} className="text-[#FF5A5F] shrink-0 mt-0.5" />
-              <span>Tầng 12, Tòa nhà Bitexco, Số 2 Hải Triều, Q.1, TP.HCM</span>
+              <span>{CONTACT.address}</span>
             </li>
             <li className="flex items-center gap-3">
               <Phone size={18} className="text-[#FF5A5F] shrink-0" />
-              <span>+84 90 123 4567</span>
+              <a href={CONTACT.phoneHref} className="hover:text-[#FF5A5F] transition-colors">{CONTACT.phoneDisplay}</a>
             </li>
             <li className="flex items-center gap-3">
               <Mail size={18} className="text-[#FF5A5F] shrink-0" />
-              <span>hello@saigonretreats.com</span>
+              <a href={`mailto:${CONTACT.email}`} className="hover:text-[#FF5A5F] transition-colors">{CONTACT.email}</a>
             </li>
           </ul>
         </div>
@@ -385,14 +394,14 @@ const Footer = () => (
 
 const FloatingContact = () => (
   <div className="fixed bottom-6 right-6 z-50 flex flex-col gap-3">
-    <button className="w-14 h-14 bg-blue-500 rounded-full text-white flex items-center justify-center shadow-lg hover:scale-110 transition-transform group relative">
+    <a href={CONTACT.zalo} target="_blank" rel="noreferrer" aria-label="Chat Zalo" className="w-14 h-14 bg-blue-500 rounded-full text-white flex items-center justify-center shadow-lg hover:scale-110 transition-transform group relative">
       <span className="font-bold text-xl">Z</span>
       <span className="absolute right-full mr-4 bg-white text-gray-800 text-sm py-1.5 px-3 rounded-lg shadow-md opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">Chat Zalo</span>
-    </button>
-    <button className="w-14 h-14 bg-[#FF5A5F] rounded-full text-white flex items-center justify-center shadow-lg hover:scale-110 transition-transform group relative">
+    </a>
+    <a href={CONTACT.phoneHref} aria-label="Gọi ngay" className="w-14 h-14 bg-[#FF5A5F] rounded-full text-white flex items-center justify-center shadow-lg hover:scale-110 transition-transform group relative">
       <Phone size={24} />
       <span className="absolute right-full mr-4 bg-white text-gray-800 text-sm py-1.5 px-3 rounded-lg shadow-md opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">Gọi ngay</span>
-    </button>
+    </a>
   </div>
 );
 
@@ -896,7 +905,7 @@ const ContactPage = () => (
                 </div>
                 <div>
                    <h4 className="font-bold text-[#0A2540] mb-1">Hotline / Zalo / WhatsApp</h4>
-                   <p className="text-gray-600">+84 90 123 4567</p>
+                    <p><a href={CONTACT.phoneHref} className="text-gray-600 hover:text-[#FF5A5F]">{CONTACT.phoneDisplay}</a></p>
                 </div>
              </div>
              <div className="flex items-start gap-4">
@@ -905,7 +914,7 @@ const ContactPage = () => (
                 </div>
                 <div>
                    <h4 className="font-bold text-[#0A2540] mb-1">Email</h4>
-                   <p className="text-gray-600">hello@saigonretreats.com</p>
+                    <p><a href={`mailto:${CONTACT.email}`} className="text-gray-600 hover:text-[#FF5A5F]">{CONTACT.email}</a></p>
                 </div>
              </div>
              <div className="flex items-start gap-4">
@@ -914,7 +923,7 @@ const ContactPage = () => (
                 </div>
                 <div>
                    <h4 className="font-bold text-[#0A2540] mb-1">Văn phòng chính</h4>
-                   <p className="text-gray-600">Tầng 12, Tòa nhà Bitexco, Số 2 Hải Triều, Phường Bến Nghé, Quận 1, TP.HCM</p>
+                    <p className="text-gray-600">{CONTACT.address}</p>
                 </div>
              </div>
           </div>
