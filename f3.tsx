@@ -702,7 +702,9 @@ const DetailPage = ({ id, navigate, apartments }) => {
             <div className="flex items-center justify-between border-b border-gray-200 pb-8 mb-8">
               <div>
                 <h2 className="text-2xl font-bold text-[#0A2540] mb-1">Toàn bộ căn hộ {apt.type}</h2>
-                <p className="text-gray-500">{apt.area}m² · 1 phòng khách · 1 bếp · {apt.type === '2PN' ? '2' : '1'} phòng tắm</p>
+                <p className="text-gray-500">
+                  {apt.area}m² · {apt.bathrooms || 1} nhà vệ sinh · {apt.furnishing || 'Đầy đủ nội thất'}
+                </p>
               </div>
               <div className="w-14 h-14 bg-gray-100 rounded-full flex items-center justify-center overflow-hidden">
                 <img src={`https://ui-avatars.com/api/?name=Host&background=0A2540&color=fff`} alt="Host" />
@@ -960,6 +962,7 @@ const AdminPage = ({ apartments, reloadApartments }) => {
   const [editingId, setEditingId] = useState(null);
   const [form, setForm] = useState({
     title: '', type: '1PN', district: 'Quận 1', price: '', area: '',
+    bathrooms: '1', furnishing: 'Đầy đủ nội thất',
     description: '', amenities: ['washer'], featured: false, status: 'available'
   });
   const [images, setImages] = useState([]);
@@ -995,6 +998,7 @@ const AdminPage = ({ apartments, reloadApartments }) => {
 
   const emptyForm = {
     title: '', type: '1PN', district: 'Quận 1', price: '', area: '',
+    bathrooms: '1', furnishing: 'Đầy đủ nội thất',
     description: '', amenities: ['washer'], featured: false, status: 'available'
   };
 
@@ -1014,6 +1018,8 @@ const AdminPage = ({ apartments, reloadApartments }) => {
       district: apartment.district,
       price: String(apartment.price),
       area: String(apartment.area),
+      bathrooms: String(apartment.bathrooms || 1),
+      furnishing: apartment.furnishing || 'Đầy đủ nội thất',
       description: apartment.description,
       amenities: apartment.amenities || [],
       featured: Boolean(apartment.featured),
@@ -1041,6 +1047,8 @@ const AdminPage = ({ apartments, reloadApartments }) => {
         district: form.district.trim(),
         price: Number(form.price),
         area: Number(form.area),
+        bathrooms: Number(form.bathrooms),
+        furnishing: form.furnishing,
         description: form.description.trim(),
         amenities: form.amenities,
         featured: form.featured,
@@ -1156,6 +1164,16 @@ const AdminPage = ({ apartments, reloadApartments }) => {
             </label>
             <label className="text-sm font-semibold text-gray-700">Diện tích (m²)
               <input required min="1" type="number" value={form.area} onChange={e => updateField('area', e.target.value)} className="mt-2 w-full p-3 border rounded-xl font-normal" placeholder="85" />
+            </label>
+            <label className="text-sm font-semibold text-gray-700">Số nhà vệ sinh
+              <input required min="1" max="20" type="number" value={form.bathrooms} onChange={e => updateField('bathrooms', e.target.value)} className="mt-2 w-full p-3 border rounded-xl font-normal" placeholder="1" />
+            </label>
+            <label className="text-sm font-semibold text-gray-700">Tình trạng nội thất
+              <select required value={form.furnishing} onChange={e => updateField('furnishing', e.target.value)} className="mt-2 w-full p-3 border rounded-xl font-normal bg-white">
+                <option value="Đầy đủ nội thất">Đầy đủ nội thất</option>
+                <option value="Nội thất cơ bản">Nội thất cơ bản</option>
+                <option value="Không nội thất">Không nội thất</option>
+              </select>
             </label>
             <label className="md:col-span-2 text-sm font-semibold text-gray-700">Trạng thái
               <select value={form.status} onChange={e => updateField('status', e.target.value)} className="mt-2 w-full p-3 border rounded-xl font-normal bg-white">

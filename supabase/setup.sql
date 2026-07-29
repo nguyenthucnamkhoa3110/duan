@@ -7,6 +7,9 @@ create table if not exists public.apartments (
   district text not null,
   price bigint not null check (price >= 0),
   area integer not null check (area > 0),
+  bathrooms integer not null default 1 check (bathrooms > 0),
+  furnishing text not null default 'Đầy đủ nội thất'
+    check (furnishing in ('Đầy đủ nội thất', 'Nội thất cơ bản', 'Không nội thất')),
   description text not null,
   amenities text[] not null default '{}',
   images text[] not null default '{}',
