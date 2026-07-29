@@ -5,8 +5,9 @@ import {
   Menu, X, Phone, Mail, CheckCircle2, Star, Clock, 
   ArrowRight, ShieldCheck, Heart, Share, PlayCircle,
   Facebook, Instagram, Twitter, Map, Navigation, Upload, Trash2,
-  LogOut, Plus, LoaderCircle
+  LogOut, Plus, LoaderCircle, Pencil, Save
 } from 'lucide-react';
+import { hasSupabaseConfig, listApartments, supabase, uploadApartmentImages } from './src/lib/supabase';
 
 const AMENITIES = {
   balcony: { icon: <Wind size={18} />, label: 'Ban công' },
@@ -433,7 +434,7 @@ const HomePage = ({ navigate, apartments }) => {
         <div className="container mx-auto px-4 md:px-8">
           <div className="flex flex-col md:flex-row md:items-end justify-between mb-12">
             <div>
-              <h2 className="text-3xl md:text-4xl font-bold text-[#0A2540] mb-4">AI LÁO????</h2>
+              <h2 className="text-3xl md:text-4xl font-bold text-[#0A2540] mb-4">Căn hộ nổi bật</h2>
               <p className="text-gray-500 max-w-xl">Những không gian sống được yêu thích nhất với thiết kế độc đáo và tiện ích vượt trội.</p>
             </div>
             <Button variant="ghost" className="mt-4 md:mt-0 group" onClick={() => navigate('listings')}>
@@ -943,15 +944,24 @@ const ContactPage = () => (
 );
 
 const AdminPage = ({ apartments, reloadApartments }) => {
-  const [token, setToken] = useState(() => sessionStorage.getItem('sr_admin_token') || '');
+  const [session, setSession] = useState(null);
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [status, setStatus] = useState('');
   const [busy, setBusy] = useState(false);
+  const [editingId, setEditingId] = useState(null);
   const [form, setForm] = useState({
     title: '', type: '1PN', district: 'Quận 1', price: '', area: '',
-    description: '', amenities: ['washer'], featured: false
+    description: '', amenities: ['washer'], featured: false, status: 'available'
   });
   const [images, setImages] = useState([]);
+
+  useEffect(() => {
+    if (!supabase) return;
+    supabase.auth.getSession().then(({ data }) => setSession(data.session));
+    const { data } = supabase.auth.onAuthStateChange((_event, nextSession) => setSession(nextSession));
+    return () => data.subscription.unsubscribe();
+  }, []);
 
   const updateField = (key, value) => setForm(current => ({ ...current, [key]: value }));
   const toggleAmenity = (key) => updateField(
@@ -964,53 +974,83 @@ const AdminPage = ({ apartments, reloadApartments }) => {
     setBusy(true);
     setStatus('');
     try {
-      const response = await fetch('/api/admin/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ password })
-      });
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.error || 'Mật khẩu không đúng');
-      sessionStorage.setItem('sr_admin_token', data.token);
-      setToken(data.token);
+      if (!supabase) throw new Error('Website chưa được kết nối với kho dữ liệu Supabase.');
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) throw error;
       setPassword('');
     } catch (error) {
-      setStatus(error.message);
+      setStatus(error.message || 'Không thể đăng nhập.');
     } finally {
       setBusy(false);
     }
   };
 
+  const emptyForm = {
+    title: '', type: '1PN', district: 'Quận 1', price: '', area: '',
+    description: '', amenities: ['washer'], featured: false, status: 'available'
+  };
+
+  const resetForm = (formElement = null) => {
+    setEditingId(null);
+    setForm(emptyForm);
+    setImages([]);
+    formElement?.reset();
+  };
+
+  const beginEdit = (apartment) => {
+    if (apartment.isDefault) return;
+    setEditingId(apartment.id);
+    setForm({
+      title: apartment.title,
+      type: apartment.type,
+      district: apartment.district,
+      price: String(apartment.price),
+      area: String(apartment.area),
+      description: apartment.description,
+      amenities: apartment.amenities || [],
+      featured: Boolean(apartment.featured),
+      status: apartment.status || 'available'
+    });
+    setImages([]);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   const submitApartment = async (event) => {
     event.preventDefault();
     const formElement = event.currentTarget;
-    if (!images.length) return setStatus('Vui lòng chọn ít nhất một hình ảnh.');
+    if (!editingId && !images.length) return setStatus('Vui lòng chọn ít nhất một hình ảnh.');
     setBusy(true);
-    setStatus('Đang tải ảnh và đăng căn hộ...');
+    setStatus(editingId ? 'Đang lưu thay đổi...' : 'Đang tải ảnh và đăng căn hộ...');
     try {
-      const payload = new FormData();
-      Object.entries(form).forEach(([key, value]) => {
-        payload.append(key, Array.isArray(value) ? JSON.stringify(value) : String(value));
-      });
-      images.forEach(image => payload.append('images', image));
-      const response = await fetch('/api/admin/apartments', {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${token}` },
-        body: payload
-      });
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.error || 'Không thể đăng căn hộ');
-      await reloadApartments();
-      setForm({ title: '', type: '1PN', district: 'Quận 1', price: '', area: '', description: '', amenities: ['washer'], featured: false });
-      setImages([]);
-      formElement.reset();
-      setStatus('Đã đăng căn hộ. Website chính đã được cập nhật.');
-    } catch (error) {
-      if (error.message.includes('đăng nhập')) {
-        sessionStorage.removeItem('sr_admin_token');
-        setToken('');
+      if (!supabase || !session?.user) throw new Error('Phiên đăng nhập đã hết hạn.');
+      let imageData = null;
+      if (images.length) {
+        imageData = await uploadApartmentImages(images, session.user.id);
       }
-      setStatus(error.message);
+      const apartmentData = {
+        title: form.title.trim(),
+        type: form.type,
+        district: form.district.trim(),
+        price: Number(form.price),
+        area: Number(form.area),
+        description: form.description.trim(),
+        amenities: form.amenities,
+        featured: form.featured,
+        status: form.status,
+        updated_at: new Date().toISOString(),
+        ...(imageData ? { images: imageData.publicUrls, image_paths: imageData.uploadedPaths } : {})
+      };
+      const query = editingId
+        ? supabase.from('apartments').update(apartmentData).eq('id', editingId)
+        : supabase.from('apartments').insert(apartmentData);
+      const { error } = await query;
+      if (error) throw error;
+      await reloadApartments();
+      const wasEditing = Boolean(editingId);
+      resetForm(formElement);
+      setStatus(wasEditing ? 'Đã lưu thay đổi trên website chính.' : 'Đã đăng căn hộ lên website chính.');
+    } catch (error) {
+      setStatus(error.message || 'Không thể lưu căn hộ.');
     } finally {
       setBusy(false);
     }
@@ -1020,30 +1060,47 @@ const AdminPage = ({ apartments, reloadApartments }) => {
     if (!window.confirm('Xóa căn hộ này khỏi website?')) return;
     setBusy(true);
     try {
-      const response = await fetch(`/api/admin/apartments/${id}`, {
-        method: 'DELETE',
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.error || 'Không thể xóa căn hộ');
+      if (!supabase) throw new Error('Supabase chưa được cấu hình.');
+      const apartment = apartments.find(item => item.id === id);
+      const { error } = await supabase.from('apartments').delete().eq('id', id);
+      if (error) throw error;
+      if (apartment?.image_paths?.length) {
+        await supabase.storage.from('apartment-images').remove(apartment.image_paths);
+      }
       await reloadApartments();
+      if (editingId === id) resetForm();
       setStatus('Đã xóa căn hộ.');
     } catch (error) {
-      setStatus(error.message);
+      setStatus(error.message || 'Không thể xóa căn hộ.');
     } finally {
       setBusy(false);
     }
   };
 
-  if (!token) {
+  if (!hasSupabaseConfig) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center px-4">
+        <div className="w-full max-w-lg bg-white p-8 rounded-3xl border border-amber-200 shadow-xl">
+          <ShieldCheck className="text-amber-600 mb-5" size={42} />
+          <h1 className="text-2xl font-bold text-[#0A2540] mb-3">Trang admin đang chờ kết nối</h1>
+          <p className="text-gray-600">Hãy thêm VITE_SUPABASE_URL và VITE_SUPABASE_ANON_KEY vào Environment Variables của Vercel, sau đó triển khai lại website.</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!session) {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center px-4">
         <form onSubmit={login} className="w-full max-w-md bg-white p-8 rounded-3xl border border-slate-200 shadow-xl">
           <div className="w-12 h-12 rounded-2xl bg-[#0A2540] text-white flex items-center justify-center mb-6"><ShieldCheck /></div>
           <h1 className="text-3xl font-bold text-[#0A2540] mb-2">Quản trị căn hộ</h1>
           <p className="text-gray-500 mb-8">Đăng nhập để cập nhật nội dung trên Saigon Retreats.</p>
+          <label className="block text-sm font-semibold text-gray-700 mb-2">Email quản trị</label>
+          <input autoFocus required type="email" value={email} onChange={e => setEmail(e.target.value)}
+            className="w-full p-3.5 border border-gray-300 rounded-xl outline-none focus:border-[#0A2540] mb-4" />
           <label className="block text-sm font-semibold text-gray-700 mb-2">Mật khẩu quản trị</label>
-          <input autoFocus required type="password" value={password} onChange={e => setPassword(e.target.value)}
+          <input required type="password" value={password} onChange={e => setPassword(e.target.value)}
             className="w-full p-3.5 border border-gray-300 rounded-xl outline-none focus:border-[#0A2540] mb-4" />
           {status && <p className="text-sm text-red-600 mb-4">{status}</p>}
           <Button disabled={busy} className="w-full py-3.5">
@@ -1062,13 +1119,16 @@ const AdminPage = ({ apartments, reloadApartments }) => {
           <div><p className="text-white/60 text-sm">Saigon Retreats</p><h1 className="text-2xl font-bold">Quản lý căn hộ</h1></div>
           <div className="flex gap-3">
             <a href="/" className="px-4 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-sm">Xem website</a>
-            <button onClick={() => { sessionStorage.removeItem('sr_admin_token'); setToken(''); }} className="p-2.5 rounded-xl bg-white/10 hover:bg-white/20" aria-label="Đăng xuất"><LogOut size={19} /></button>
+            <button onClick={() => supabase?.auth.signOut()} className="p-2.5 rounded-xl bg-white/10 hover:bg-white/20" aria-label="Đăng xuất"><LogOut size={19} /></button>
           </div>
         </div>
       </div>
       <div className="container mx-auto px-4 md:px-8 py-10 grid xl:grid-cols-[minmax(0,1fr)_420px] gap-8 items-start">
         <section className="bg-white rounded-3xl border border-slate-200 p-6 md:p-8 shadow-sm">
-          <div className="flex items-center gap-3 mb-7"><Plus className="text-[#FF5A5F]" /><h2 className="text-2xl font-bold text-[#0A2540]">Đăng căn hộ mới</h2></div>
+          <div className="flex items-center gap-3 mb-7">
+            {editingId ? <Pencil className="text-[#FF5A5F]" /> : <Plus className="text-[#FF5A5F]" />}
+            <h2 className="text-2xl font-bold text-[#0A2540]">{editingId ? 'Chỉnh sửa căn hộ' : 'Đăng căn hộ mới'}</h2>
+          </div>
           <form onSubmit={submitApartment} className="grid md:grid-cols-2 gap-5">
             <label className="md:col-span-2 text-sm font-semibold text-gray-700">Tên căn hộ
               <input required value={form.title} onChange={e => updateField('title', e.target.value)} className="mt-2 w-full p-3 border rounded-xl font-normal" placeholder="VD: River View Apartment Thảo Điền" />
@@ -1086,6 +1146,14 @@ const AdminPage = ({ apartments, reloadApartments }) => {
             </label>
             <label className="text-sm font-semibold text-gray-700">Diện tích (m²)
               <input required min="1" type="number" value={form.area} onChange={e => updateField('area', e.target.value)} className="mt-2 w-full p-3 border rounded-xl font-normal" placeholder="85" />
+            </label>
+            <label className="md:col-span-2 text-sm font-semibold text-gray-700">Trạng thái
+              <select value={form.status} onChange={e => updateField('status', e.target.value)} className="mt-2 w-full p-3 border rounded-xl font-normal bg-white">
+                <option value="available">Còn trống</option>
+                <option value="reserved">Đang giữ chỗ</option>
+                <option value="rented">Đã cho thuê</option>
+                <option value="hidden">Ẩn khỏi website</option>
+              </select>
             </label>
             <label className="md:col-span-2 text-sm font-semibold text-gray-700">Mô tả
               <textarea required rows={5} value={form.description} onChange={e => updateField('description', e.target.value)} className="mt-2 w-full p-3 border rounded-xl font-normal resize-y" />
@@ -1105,8 +1173,9 @@ const AdminPage = ({ apartments, reloadApartments }) => {
               <Upload className="mx-auto mb-3 text-[#FF5A5F]" />
               <span className="font-semibold text-[#0A2540]">Chọn hình ảnh căn hộ</span>
               <span className="block text-sm text-gray-500 mt-1">Tối đa 8 ảnh, JPG/PNG/WebP, mỗi ảnh dưới 8 MB</span>
-              <input required multiple accept="image/jpeg,image/png,image/webp" type="file" onChange={e => setImages(Array.from(e.target.files || []))} className="sr-only" />
+              <input required={!editingId} multiple accept="image/jpeg,image/png,image/webp" type="file" onChange={e => setImages(Array.from(e.target.files || []))} className="sr-only" />
               {images.length > 0 && <span className="block text-sm font-semibold text-green-700 mt-3">Đã chọn {images.length} ảnh</span>}
+              {editingId && images.length === 0 && <span className="block text-sm text-gray-500 mt-3">Không chọn ảnh mới nếu muốn giữ nguyên ảnh hiện tại</span>}
             </label>
             <label className="md:col-span-2 flex items-center gap-3 text-sm font-medium text-gray-700">
               <input type="checkbox" checked={form.featured} onChange={e => updateField('featured', e.target.checked)} className="w-5 h-5 accent-[#FF5A5F]" />
@@ -1114,8 +1183,13 @@ const AdminPage = ({ apartments, reloadApartments }) => {
             </label>
             {status && <p className={`md:col-span-2 text-sm ${status.startsWith('Đã') ? 'text-green-700' : 'text-gray-600'}`}>{status}</p>}
             <Button disabled={busy} variant="accent" className="md:col-span-2 py-4 gap-2">
-              {busy ? <LoaderCircle className="animate-spin" /> : <><Upload size={19} /> Đăng căn hộ lên website</>}
+              {busy ? <LoaderCircle className="animate-spin" /> : editingId ? <><Save size={19} /> Lưu thay đổi</> : <><Upload size={19} /> Đăng căn hộ lên website</>}
             </Button>
+            {editingId && (
+              <button type="button" onClick={() => resetForm()} className="md:col-span-2 py-3 rounded-xl border border-slate-300 text-slate-600">
+                Hủy chỉnh sửa
+              </button>
+            )}
           </form>
         </section>
         <aside className="bg-white rounded-3xl border border-slate-200 p-6 shadow-sm">
@@ -1128,7 +1202,12 @@ const AdminPage = ({ apartments, reloadApartments }) => {
                   <p className="font-semibold text-sm text-[#0A2540] line-clamp-2">{apt.title}</p>
                   <p className="text-xs text-gray-500 mt-1">{apt.district} · {formatPrice(apt.price)}</p>
                 </div>
-                {!apt.isDefault && <button disabled={busy} onClick={() => deleteApartment(apt.id)} className="self-start p-2 text-gray-400 hover:text-red-600" aria-label="Xóa căn hộ"><Trash2 size={17} /></button>}
+                {!apt.isDefault && (
+                  <div className="flex flex-col gap-1">
+                    <button disabled={busy} onClick={() => beginEdit(apt)} className="p-2 text-gray-400 hover:text-blue-600" aria-label="Sửa căn hộ"><Pencil size={17} /></button>
+                    <button disabled={busy} onClick={() => deleteApartment(apt.id)} className="p-2 text-gray-400 hover:text-red-600" aria-label="Xóa căn hộ"><Trash2 size={17} /></button>
+                  </div>
+                )}
               </div>
             ))}
           </div>
@@ -1145,12 +1224,10 @@ export default function App() {
 
   const reloadApartments = async () => {
     try {
-      const response = await fetch('/api/apartments');
-      if (!response.ok) return;
-      const data = await response.json();
+      const data = await listApartments();
       setApartments([...data, ...DEFAULT_APARTMENTS.map(item => ({ ...item, isDefault: true }))]);
     } catch {
-      // The bundled sample listings remain available if the API is temporarily unavailable.
+      // The bundled sample listings remain available if Supabase is not configured or unavailable.
     }
   };
 
