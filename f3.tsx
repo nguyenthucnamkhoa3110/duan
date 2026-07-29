@@ -983,6 +983,7 @@ const AdminPage = ({ apartments, reloadApartments }) => {
 
   const submitApartment = async (event) => {
     event.preventDefault();
+    const formElement = event.currentTarget;
     if (!images.length) return setStatus('Vui lòng chọn ít nhất một hình ảnh.');
     setBusy(true);
     setStatus('Đang tải ảnh và đăng căn hộ...');
@@ -1002,7 +1003,7 @@ const AdminPage = ({ apartments, reloadApartments }) => {
       await reloadApartments();
       setForm({ title: '', type: '1PN', district: 'Quận 1', price: '', area: '', description: '', amenities: ['washer'], featured: false });
       setImages([]);
-      event.currentTarget.reset();
+      formElement.reset();
       setStatus('Đã đăng căn hộ. Website chính đã được cập nhật.');
     } catch (error) {
       if (error.message.includes('đăng nhập')) {
