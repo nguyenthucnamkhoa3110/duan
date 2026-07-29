@@ -20,6 +20,14 @@ const AMENITIES = {
   metro: { icon: <TrainFront size={18} />, label: 'Gần Metro' }
 };
 
+const DISTRICTS = [
+  'Quận 1', 'Quận 2', 'Quận 3', 'Quận 4',
+  'Quận 5', 'Quận 6', 'Quận 7', 'Quận 8',
+  'Quận 9', 'Quận 10', 'Quận 11',
+  'Quận Bình Thạnh', 'Quận Phú Nhuận', 'Quận Gò Vấp',
+  'Quận Tân Bình', 'Quận Tân Phú'
+];
+
 const DEFAULT_APARTMENTS = [
   {
     id: 1,
@@ -497,7 +505,10 @@ const ListingsPage = ({ navigate, apartments }) => {
 
   const filteredApts = useMemo(() => {
     return apartments.filter(apt => {
-      if (filters.district && apt.district !== filters.district) return false;
+      if (
+        filters.district &&
+        apt.district.replace(/^Quận\s+/i, '') !== filters.district.replace(/^Quận\s+/i, '')
+      ) return false;
       if (filters.type && apt.type !== filters.type) return false;
       if (filters.priceRange) {
         if (filters.priceRange === 'low' && apt.price >= 15000000) return false;
@@ -536,12 +547,7 @@ const ListingsPage = ({ navigate, apartments }) => {
                     onChange={(e) => setFilters({...filters, district: e.target.value})}
                   >
                     <option value="">Tất cả khu vực</option>
-                    <option value="Quận 1">Quận 1</option>
-                    <option value="Quận 2">Quận 2 (Thảo Điền)</option>
-                    <option value="Quận 3">Quận 3</option>
-                    <option value="Quận 4">Quận 4</option>
-                    <option value="Quận 7">Quận 7 (Phú Mỹ Hưng)</option>
-                    <option value="Bình Thạnh">Bình Thạnh</option>
+                    {DISTRICTS.map(district => <option key={district} value={district}>{district}</option>)}
                   </select>
                 </div>
 
@@ -1141,7 +1147,9 @@ const AdminPage = ({ apartments, reloadApartments }) => {
               </select>
             </label>
             <label className="text-sm font-semibold text-gray-700">Khu vực
-              <input required value={form.district} onChange={e => updateField('district', e.target.value)} className="mt-2 w-full p-3 border rounded-xl font-normal" />
+              <select required value={form.district} onChange={e => updateField('district', e.target.value)} className="mt-2 w-full p-3 border rounded-xl font-normal bg-white">
+                {DISTRICTS.map(district => <option key={district} value={district}>{district}</option>)}
+              </select>
             </label>
             <label className="text-sm font-semibold text-gray-700">Giá thuê / tháng (VNĐ)
               <input required min="0" type="number" value={form.price} onChange={e => updateField('price', e.target.value)} className="mt-2 w-full p-3 border rounded-xl font-normal" placeholder="25000000" />
