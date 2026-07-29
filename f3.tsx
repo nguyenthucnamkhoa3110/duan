@@ -544,7 +544,7 @@ const ListingsPage = ({ navigate, apartments }) => {
         <div className="flex flex-col lg:flex-row gap-8">
           {/* Sidebar Filters */}
           <aside className="w-full lg:w-72 shrink-0">
-            <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 sticky top-28">
+            <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 lg:sticky lg:top-28 lg:max-h-[calc(100vh-8rem)] lg:overflow-y-auto lg:overscroll-contain">
               <h3 className="font-bold text-lg mb-6 flex items-center"><Search size={18} className="mr-2" /> Bộ lọc</h3>
               
               <div className="space-y-6">
