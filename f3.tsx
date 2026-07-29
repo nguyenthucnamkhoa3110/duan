@@ -407,6 +407,23 @@ const FloatingContact = () => (
 
 const HomePage = ({ navigate, apartments }) => {
   const featuredApts = apartments.filter(a => a.featured).slice(0, 3);
+  const [districtQuery, setDistrictQuery] = useState('');
+
+  const searchByDistrict = (event) => {
+    event?.preventDefault();
+    const normalize = (value) => value
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .toLowerCase()
+      .replace(/\s+/g, ' ')
+      .trim();
+    const query = normalize(districtQuery);
+    const exactDistrict = DISTRICTS.find(district => query === normalize(district));
+    const matchedDistrict = exactDistrict || [...DISTRICTS]
+      .sort((a, b) => normalize(b).length - normalize(a).length)
+      .find(district => query.includes(normalize(district)));
+    navigate('listings', matchedDistrict || '');
+  };
   
   return (
     <div className="min-h-screen">
@@ -430,15 +447,15 @@ const HomePage = ({ navigate, apartments }) => {
           </p>
 
           {/* Quick Search Bar */}
-          <div className="bg-white/10 backdrop-blur-md p-2 rounded-2xl md:rounded-full max-w-4xl mx-auto shadow-2xl flex flex-col md:flex-row items-center gap-2 border border-white/20 animate-fade-in-up" style={{animationDelay: '0.2s'}}>
+          <form onSubmit={searchByDistrict} className="bg-white/10 backdrop-blur-md p-2 rounded-2xl md:rounded-full max-w-4xl mx-auto shadow-2xl flex flex-col md:flex-row items-center gap-2 border border-white/20 animate-fade-in-up" style={{animationDelay: '0.2s'}}>
             <div className="flex-1 w-full bg-white rounded-xl md:rounded-full flex items-center px-6 py-4">
               <MapPin className="text-gray-400 mr-3 shrink-0" size={20} />
-              <input type="text" placeholder="Bạn muốn thuê ở quận nào?" className="w-full outline-none text-gray-800 placeholder-gray-500 bg-transparent text-sm md:text-base" />
+              <input value={districtQuery} onChange={event => setDistrictQuery(event.target.value)} type="text" placeholder="Bạn muốn thuê ở quận nào?" className="w-full outline-none text-gray-800 placeholder-gray-500 bg-transparent text-sm md:text-base" />
             </div>
-            <Button variant="accent" className="w-full md:w-auto px-8 py-4 rounded-xl md:rounded-full text-base whitespace-nowrap" onClick={() => navigate('listings')}>
+            <Button type="submit" variant="accent" className="w-full md:w-auto px-8 py-4 rounded-xl md:rounded-full text-base whitespace-nowrap">
               <Search className="mr-2" size={18} /> Tìm căn hộ
             </Button>
-          </div>
+          </form>
 
           <div className="mt-10 flex flex-wrap justify-center gap-4 text-sm font-medium animate-fade-in-up" style={{animationDelay: '0.3s'}}>
             <span className="bg-white/20 backdrop-blur-sm px-4 py-2 rounded-full cursor-pointer hover:bg-white hover:text-[#0A2540] transition-colors" onClick={() => navigate('listings')}>Quận 1</span>
@@ -498,9 +515,9 @@ const HomePage = ({ navigate, apartments }) => {
   );
 };
 
-const ListingsPage = ({ navigate, apartments }) => {
+const ListingsPage = ({ navigate, apartments, initialDistrict = '' }) => {
   const [filters, setFilters] = useState({
-    district: '', type: '', priceRange: '', amenities: []
+    district: initialDistrict, type: '', priceRange: '', amenities: []
   });
   
   const handleAmenityChange = (amenity) => {
@@ -1409,6 +1426,7 @@ const AdminPage = ({ apartments, reloadApartments }) => {
 export default function App() {
   const [currentRoute, setCurrentRoute] = useState(() => window.location.pathname.startsWith('/admin') ? 'admin' : 'home');
   const [selectedId, setSelectedId] = useState(null);
+  const [listingDistrict, setListingDistrict] = useState('');
   const [apartments, setApartments] = useState(DEFAULT_APARTMENTS.map(item => ({ ...item, isDefault: true })));
 
   const reloadApartments = async () => {
@@ -1427,13 +1445,14 @@ export default function App() {
 
   const navigate = (route, id = null) => {
     setCurrentRoute(route);
-    if (id) setSelectedId(id);
+    if (route === 'listings') setListingDistrict(id || '');
+    if (id && route !== 'listings') setSelectedId(id);
   };
 
   const renderContent = () => {
     switch (currentRoute) {
       case 'home': return <HomePage navigate={navigate} apartments={apartments} />;
-      case 'listings': return <ListingsPage navigate={navigate} apartments={apartments} />;
+      case 'listings': return <ListingsPage navigate={navigate} apartments={apartments} initialDistrict={listingDistrict} />;
       case 'detail': return <DetailPage id={selectedId} navigate={navigate} apartments={apartments} />;
       case 'about': return <AboutPage />;
       case 'blog': return <BlogPage navigate={navigate} />;
