@@ -653,6 +653,7 @@ const ListingsPage = ({ navigate, apartments }) => {
 };
 
 const DetailPage = ({ id, navigate, apartments }) => {
+  const [showConsultationPhone, setShowConsultationPhone] = useState(false);
   const apt = apartments.find(a => a.id === id);
   if (!apt) return <div>Not found</div>;
 
@@ -775,9 +776,22 @@ const DetailPage = ({ id, navigate, apartments }) => {
               </div>
 
               <Button variant="accent" className="w-full py-4 text-lg font-bold mb-4">Đặt lịch xem phòng</Button>
-              <Button variant="secondary" className="w-full py-4 text-lg font-bold mb-6 gap-2">
-                 <Phone size={20} /> Gọi tư vấn
-              </Button>
+              {showConsultationPhone ? (
+                <a
+                  href={CONTACT.phoneHref}
+                  className="w-full py-4 text-lg font-bold mb-6 gap-2 rounded-xl border border-gray-200 text-[#0A2540] hover:border-[#FF5A5F] hover:text-[#FF5A5F] transition-colors flex items-center justify-center"
+                >
+                  <Phone size={20} /> {CONTACT.phoneDisplay}
+                </a>
+              ) : (
+                <Button
+                  variant="secondary"
+                  className="w-full py-4 text-lg font-bold mb-6 gap-2"
+                  onClick={() => setShowConsultationPhone(true)}
+                >
+                  <Phone size={20} /> Gọi tư vấn
+                </Button>
+              )}
               
               <p className="text-center text-sm text-gray-500">Không thu phí dịch vụ từ khách thuê</p>
               
