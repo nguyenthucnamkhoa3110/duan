@@ -4,7 +4,8 @@ import {
   Wifi, Coffee, Dumbbell, PawPrint, Waves, Wind, ChevronRight, 
   Menu, X, Phone, Mail, CheckCircle2, Star, Clock, 
   ArrowRight, ShieldCheck, Heart, Share, PlayCircle,
-  Facebook, Instagram, Twitter, Map, Navigation
+  Facebook, Instagram, Twitter, Map, Navigation, Upload, Trash2,
+  LogOut, Plus, LoaderCircle
 } from 'lucide-react';
 
 const AMENITIES = {
@@ -16,7 +17,7 @@ const AMENITIES = {
   washer: { icon: <Maximize size={18} />, label: 'Máy giặt riêng' }
 };
 
-const APARTMENTS = [
+const DEFAULT_APARTMENTS = [
   {
     id: 1,
     title: 'The Cloud Oasis - Thảo Điền River View',
@@ -384,8 +385,8 @@ const FloatingContact = () => (
   </div>
 );
 
-const HomePage = ({ navigate }) => {
-  const featuredApts = APARTMENTS.filter(a => a.featured).slice(0, 3);
+const HomePage = ({ navigate, apartments }) => {
+  const featuredApts = apartments.filter(a => a.featured).slice(0, 3);
   
   return (
     <div className="min-h-screen">
@@ -432,7 +433,7 @@ const HomePage = ({ navigate }) => {
         <div className="container mx-auto px-4 md:px-8">
           <div className="flex flex-col md:flex-row md:items-end justify-between mb-12">
             <div>
-              <h2 className="text-3xl md:text-4xl font-bold text-[#0A2540] mb-4">Căn hộ nổi bật</h2>
+              <h2 className="text-3xl md:text-4xl font-bold text-[#0A2540] mb-4">AI LÁO????</h2>
               <p className="text-gray-500 max-w-xl">Những không gian sống được yêu thích nhất với thiết kế độc đáo và tiện ích vượt trội.</p>
             </div>
             <Button variant="ghost" className="mt-4 md:mt-0 group" onClick={() => navigate('listings')}>
@@ -477,7 +478,7 @@ const HomePage = ({ navigate }) => {
   );
 };
 
-const ListingsPage = ({ navigate }) => {
+const ListingsPage = ({ navigate, apartments }) => {
   const [filters, setFilters] = useState({
     district: '', type: '', priceRange: '', amenities: []
   });
@@ -492,7 +493,7 @@ const ListingsPage = ({ navigate }) => {
   };
 
   const filteredApts = useMemo(() => {
-    return APARTMENTS.filter(apt => {
+    return apartments.filter(apt => {
       if (filters.district && apt.district !== filters.district) return false;
       if (filters.type && apt.type !== filters.type) return false;
       if (filters.priceRange) {
@@ -633,11 +634,11 @@ const ListingsPage = ({ navigate }) => {
   );
 };
 
-const DetailPage = ({ id, navigate }) => {
-  const apt = APARTMENTS.find(a => a.id === id);
+const DetailPage = ({ id, navigate, apartments }) => {
+  const apt = apartments.find(a => a.id === id);
   if (!apt) return <div>Not found</div>;
 
-  const similarApts = APARTMENTS.filter(a => a.district === apt.district && a.id !== apt.id).slice(0, 3);
+  const similarApts = apartments.filter(a => a.district === apt.district && a.id !== apt.id).slice(0, 3);
 
   return (
     <div className="min-h-screen bg-white pt-20">
@@ -941,9 +942,218 @@ const ContactPage = () => (
   </div>
 );
 
+const AdminPage = ({ apartments, reloadApartments }) => {
+  const [token, setToken] = useState(() => sessionStorage.getItem('sr_admin_token') || '');
+  const [password, setPassword] = useState('');
+  const [status, setStatus] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [form, setForm] = useState({
+    title: '', type: '1PN', district: 'Quận 1', price: '', area: '',
+    description: '', amenities: ['washer'], featured: false
+  });
+  const [images, setImages] = useState([]);
+
+  const updateField = (key, value) => setForm(current => ({ ...current, [key]: value }));
+  const toggleAmenity = (key) => updateField(
+    'amenities',
+    form.amenities.includes(key) ? form.amenities.filter(item => item !== key) : [...form.amenities, key]
+  );
+
+  const login = async (event) => {
+    event.preventDefault();
+    setBusy(true);
+    setStatus('');
+    try {
+      const response = await fetch('/api/admin/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password })
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'Mật khẩu không đúng');
+      sessionStorage.setItem('sr_admin_token', data.token);
+      setToken(data.token);
+      setPassword('');
+    } catch (error) {
+      setStatus(error.message);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const submitApartment = async (event) => {
+    event.preventDefault();
+    if (!images.length) return setStatus('Vui lòng chọn ít nhất một hình ảnh.');
+    setBusy(true);
+    setStatus('Đang tải ảnh và đăng căn hộ...');
+    try {
+      const payload = new FormData();
+      Object.entries(form).forEach(([key, value]) => {
+        payload.append(key, Array.isArray(value) ? JSON.stringify(value) : String(value));
+      });
+      images.forEach(image => payload.append('images', image));
+      const response = await fetch('/api/admin/apartments', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+        body: payload
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'Không thể đăng căn hộ');
+      await reloadApartments();
+      setForm({ title: '', type: '1PN', district: 'Quận 1', price: '', area: '', description: '', amenities: ['washer'], featured: false });
+      setImages([]);
+      event.currentTarget.reset();
+      setStatus('Đã đăng căn hộ. Website chính đã được cập nhật.');
+    } catch (error) {
+      if (error.message.includes('đăng nhập')) {
+        sessionStorage.removeItem('sr_admin_token');
+        setToken('');
+      }
+      setStatus(error.message);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const deleteApartment = async (id) => {
+    if (!window.confirm('Xóa căn hộ này khỏi website?')) return;
+    setBusy(true);
+    try {
+      const response = await fetch(`/api/admin/apartments/${id}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'Không thể xóa căn hộ');
+      await reloadApartments();
+      setStatus('Đã xóa căn hộ.');
+    } catch (error) {
+      setStatus(error.message);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  if (!token) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center px-4">
+        <form onSubmit={login} className="w-full max-w-md bg-white p-8 rounded-3xl border border-slate-200 shadow-xl">
+          <div className="w-12 h-12 rounded-2xl bg-[#0A2540] text-white flex items-center justify-center mb-6"><ShieldCheck /></div>
+          <h1 className="text-3xl font-bold text-[#0A2540] mb-2">Quản trị căn hộ</h1>
+          <p className="text-gray-500 mb-8">Đăng nhập để cập nhật nội dung trên Saigon Retreats.</p>
+          <label className="block text-sm font-semibold text-gray-700 mb-2">Mật khẩu quản trị</label>
+          <input autoFocus required type="password" value={password} onChange={e => setPassword(e.target.value)}
+            className="w-full p-3.5 border border-gray-300 rounded-xl outline-none focus:border-[#0A2540] mb-4" />
+          {status && <p className="text-sm text-red-600 mb-4">{status}</p>}
+          <Button disabled={busy} className="w-full py-3.5">
+            {busy ? <LoaderCircle className="animate-spin" /> : 'Đăng nhập'}
+          </Button>
+          <a href="/" className="block text-center text-sm text-gray-500 hover:text-[#FF5A5F] mt-5">← Về website chính</a>
+        </form>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-slate-50 pb-20">
+      <div className="bg-[#0A2540] text-white">
+        <div className="container mx-auto px-4 md:px-8 py-6 flex items-center justify-between">
+          <div><p className="text-white/60 text-sm">Saigon Retreats</p><h1 className="text-2xl font-bold">Quản lý căn hộ</h1></div>
+          <div className="flex gap-3">
+            <a href="/" className="px-4 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-sm">Xem website</a>
+            <button onClick={() => { sessionStorage.removeItem('sr_admin_token'); setToken(''); }} className="p-2.5 rounded-xl bg-white/10 hover:bg-white/20" aria-label="Đăng xuất"><LogOut size={19} /></button>
+          </div>
+        </div>
+      </div>
+      <div className="container mx-auto px-4 md:px-8 py-10 grid xl:grid-cols-[minmax(0,1fr)_420px] gap-8 items-start">
+        <section className="bg-white rounded-3xl border border-slate-200 p-6 md:p-8 shadow-sm">
+          <div className="flex items-center gap-3 mb-7"><Plus className="text-[#FF5A5F]" /><h2 className="text-2xl font-bold text-[#0A2540]">Đăng căn hộ mới</h2></div>
+          <form onSubmit={submitApartment} className="grid md:grid-cols-2 gap-5">
+            <label className="md:col-span-2 text-sm font-semibold text-gray-700">Tên căn hộ
+              <input required value={form.title} onChange={e => updateField('title', e.target.value)} className="mt-2 w-full p-3 border rounded-xl font-normal" placeholder="VD: River View Apartment Thảo Điền" />
+            </label>
+            <label className="text-sm font-semibold text-gray-700">Loại căn hộ
+              <select value={form.type} onChange={e => updateField('type', e.target.value)} className="mt-2 w-full p-3 border rounded-xl font-normal bg-white">
+                {['Studio','1PN','2PN','3PN','Duplex','Penthouse'].map(item => <option key={item}>{item}</option>)}
+              </select>
+            </label>
+            <label className="text-sm font-semibold text-gray-700">Khu vực
+              <input required value={form.district} onChange={e => updateField('district', e.target.value)} className="mt-2 w-full p-3 border rounded-xl font-normal" />
+            </label>
+            <label className="text-sm font-semibold text-gray-700">Giá thuê / tháng (VNĐ)
+              <input required min="0" type="number" value={form.price} onChange={e => updateField('price', e.target.value)} className="mt-2 w-full p-3 border rounded-xl font-normal" placeholder="25000000" />
+            </label>
+            <label className="text-sm font-semibold text-gray-700">Diện tích (m²)
+              <input required min="1" type="number" value={form.area} onChange={e => updateField('area', e.target.value)} className="mt-2 w-full p-3 border rounded-xl font-normal" placeholder="85" />
+            </label>
+            <label className="md:col-span-2 text-sm font-semibold text-gray-700">Mô tả
+              <textarea required rows={5} value={form.description} onChange={e => updateField('description', e.target.value)} className="mt-2 w-full p-3 border rounded-xl font-normal resize-y" />
+            </label>
+            <fieldset className="md:col-span-2">
+              <legend className="text-sm font-semibold text-gray-700 mb-3">Tiện ích</legend>
+              <div className="flex flex-wrap gap-2">
+                {Object.entries(AMENITIES).map(([key, item]) => (
+                  <button key={key} type="button" onClick={() => toggleAmenity(key)}
+                    className={`px-3 py-2 rounded-xl text-sm border ${form.amenities.includes(key) ? 'bg-[#0A2540] text-white border-[#0A2540]' : 'bg-white text-gray-600 border-gray-200'}`}>
+                    {item.label}
+                  </button>
+                ))}
+              </div>
+            </fieldset>
+            <label className="md:col-span-2 border-2 border-dashed border-slate-300 rounded-2xl p-7 text-center cursor-pointer hover:border-[#FF5A5F] transition-colors">
+              <Upload className="mx-auto mb-3 text-[#FF5A5F]" />
+              <span className="font-semibold text-[#0A2540]">Chọn hình ảnh căn hộ</span>
+              <span className="block text-sm text-gray-500 mt-1">Tối đa 8 ảnh, JPG/PNG/WebP, mỗi ảnh dưới 8 MB</span>
+              <input required multiple accept="image/jpeg,image/png,image/webp" type="file" onChange={e => setImages(Array.from(e.target.files || []))} className="sr-only" />
+              {images.length > 0 && <span className="block text-sm font-semibold text-green-700 mt-3">Đã chọn {images.length} ảnh</span>}
+            </label>
+            <label className="md:col-span-2 flex items-center gap-3 text-sm font-medium text-gray-700">
+              <input type="checkbox" checked={form.featured} onChange={e => updateField('featured', e.target.checked)} className="w-5 h-5 accent-[#FF5A5F]" />
+              Hiển thị ở mục căn hộ nổi bật
+            </label>
+            {status && <p className={`md:col-span-2 text-sm ${status.startsWith('Đã') ? 'text-green-700' : 'text-gray-600'}`}>{status}</p>}
+            <Button disabled={busy} variant="accent" className="md:col-span-2 py-4 gap-2">
+              {busy ? <LoaderCircle className="animate-spin" /> : <><Upload size={19} /> Đăng căn hộ lên website</>}
+            </Button>
+          </form>
+        </section>
+        <aside className="bg-white rounded-3xl border border-slate-200 p-6 shadow-sm">
+          <div className="flex justify-between items-center mb-5"><h2 className="text-xl font-bold text-[#0A2540]">Đang hiển thị</h2><span className="text-sm bg-slate-100 px-3 py-1 rounded-full">{apartments.length} căn</span></div>
+          <div className="space-y-3 max-h-[720px] overflow-auto pr-1">
+            {apartments.map(apt => (
+              <div key={apt.id} className="flex gap-3 p-3 rounded-2xl border border-slate-100">
+                <img src={apt.images[0]} alt="" className="w-20 h-20 rounded-xl object-cover bg-slate-100" />
+                <div className="min-w-0 flex-1">
+                  <p className="font-semibold text-sm text-[#0A2540] line-clamp-2">{apt.title}</p>
+                  <p className="text-xs text-gray-500 mt-1">{apt.district} · {formatPrice(apt.price)}</p>
+                </div>
+                {!apt.isDefault && <button disabled={busy} onClick={() => deleteApartment(apt.id)} className="self-start p-2 text-gray-400 hover:text-red-600" aria-label="Xóa căn hộ"><Trash2 size={17} /></button>}
+              </div>
+            ))}
+          </div>
+        </aside>
+      </div>
+    </div>
+  );
+};
+
 export default function App() {
-  const [currentRoute, setCurrentRoute] = useState('home');
+  const [currentRoute, setCurrentRoute] = useState(() => window.location.pathname.startsWith('/admin') ? 'admin' : 'home');
   const [selectedId, setSelectedId] = useState(null);
+  const [apartments, setApartments] = useState(DEFAULT_APARTMENTS.map(item => ({ ...item, isDefault: true })));
+
+  const reloadApartments = async () => {
+    try {
+      const response = await fetch('/api/apartments');
+      if (!response.ok) return;
+      const data = await response.json();
+      setApartments([...data, ...DEFAULT_APARTMENTS.map(item => ({ ...item, isDefault: true }))]);
+    } catch {
+      // The bundled sample listings remain available if the API is temporarily unavailable.
+    }
+  };
+
+  useEffect(() => { reloadApartments(); }, []);
 
   useScrollToTop(currentRoute);
   useScrollToTop(selectedId);
@@ -955,26 +1165,27 @@ export default function App() {
 
   const renderContent = () => {
     switch (currentRoute) {
-      case 'home': return <HomePage navigate={navigate} />;
-      case 'listings': return <ListingsPage navigate={navigate} />;
-      case 'detail': return <DetailPage id={selectedId} navigate={navigate} />;
+      case 'home': return <HomePage navigate={navigate} apartments={apartments} />;
+      case 'listings': return <ListingsPage navigate={navigate} apartments={apartments} />;
+      case 'detail': return <DetailPage id={selectedId} navigate={navigate} apartments={apartments} />;
       case 'about': return <AboutPage />;
       case 'blog': return <BlogPage />;
       case 'contact': return <ContactPage />;
-      default: return <HomePage navigate={navigate} />;
+      case 'admin': return <AdminPage apartments={apartments} reloadApartments={reloadApartments} />;
+      default: return <HomePage navigate={navigate} apartments={apartments} />;
     }
   };
 
   return (
     <div className="font-sans text-gray-900 selection:bg-[#FF5A5F] selection:text-white flex flex-col min-h-screen">
-      <Header currentRoute={currentRoute} navigate={navigate} />
+      {currentRoute !== 'admin' && <Header currentRoute={currentRoute} navigate={navigate} />}
       
       <main className="flex-grow">
         {renderContent()}
       </main>
 
-      <Footer />
-      <FloatingContact />
+      {currentRoute !== 'admin' && <Footer />}
+      {currentRoute !== 'admin' && <FloatingContact />}
 
       {/* Global Styles for Animations */}
       <style dangerouslySetInnerHTML={{__html: `
