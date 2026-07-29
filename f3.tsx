@@ -654,6 +654,7 @@ const ListingsPage = ({ navigate, apartments }) => {
 
 const DetailPage = ({ id, navigate, apartments }) => {
   const [showConsultationPhone, setShowConsultationPhone] = useState(false);
+  const [showGallery, setShowGallery] = useState(false);
   const apt = apartments.find(a => a.id === id);
   if (!apt) return <div>Not found</div>;
 
@@ -696,13 +697,46 @@ const DetailPage = ({ id, navigate, apartments }) => {
           ) : (
             <div className="hidden md:block h-full bg-gray-100"></div>
           )}
-           <div className="hidden md:block h-full bg-gray-100"></div>
-           <div className="hidden md:block h-full bg-gray-100 relative group cursor-pointer">
-              <div className="absolute inset-0 bg-black/40 flex items-center justify-center text-white font-medium group-hover:bg-black/50 transition-colors">
-                 Xem tất cả ảnh
-              </div>
+           <div className="hidden md:block h-full bg-gray-100">
+             {apt.images[3] && <img src={apt.images[3]} alt="Image 4" className="w-full h-full object-cover" />}
            </div>
+           <button type="button" onClick={() => setShowGallery(true)} className="hidden md:block h-full bg-gray-100 relative group cursor-pointer text-left">
+              {apt.images[4] && <img src={apt.images[4]} alt="Image 5" className="w-full h-full object-cover" />}
+              <div className="absolute inset-0 bg-black/45 flex items-center justify-center text-white font-semibold group-hover:bg-black/55 transition-colors">
+                 Xem tất cả {apt.images.length} ảnh
+              </div>
+           </button>
         </div>
+
+        <button type="button" onClick={() => setShowGallery(true)} className="md:hidden w-full -mt-8 mb-10 py-3 rounded-xl border border-gray-200 font-semibold text-[#0A2540]">
+          Xem tất cả {apt.images.length} ảnh
+        </button>
+
+        {showGallery && (
+          <div className="fixed inset-0 z-[100] bg-white overflow-y-auto">
+            <div className="sticky top-0 z-10 bg-white/95 backdrop-blur border-b border-gray-200">
+              <div className="max-w-6xl mx-auto px-4 md:px-8 py-4 flex items-center justify-between">
+                <div>
+                  <h2 className="font-bold text-xl text-[#0A2540]">Hình ảnh căn hộ</h2>
+                  <p className="text-sm text-gray-500">{apt.images.length} ảnh · {apt.title}</p>
+                </div>
+                <button type="button" onClick={() => setShowGallery(false)} aria-label="Đóng thư viện ảnh" className="w-11 h-11 rounded-full border border-gray-200 flex items-center justify-center hover:bg-gray-100">
+                  <X size={22} />
+                </button>
+              </div>
+            </div>
+            <div className="max-w-6xl mx-auto px-4 md:px-8 py-8 grid grid-cols-1 md:grid-cols-2 gap-4">
+              {apt.images.map((image, index) => (
+                <img
+                  key={`${image}-${index}`}
+                  src={image}
+                  alt={`${apt.title} - ảnh ${index + 1}`}
+                  className={`w-full rounded-2xl object-cover bg-gray-100 ${index === 0 ? 'md:col-span-2 md:max-h-[700px]' : 'h-auto md:min-h-[320px] md:max-h-[520px]'}`}
+                />
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Content Layout */}
         <div className="flex flex-col lg:flex-row gap-12">
