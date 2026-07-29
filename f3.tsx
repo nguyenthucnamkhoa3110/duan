@@ -866,15 +866,82 @@ const AboutPage = () => (
   </div>
 );
 
-const BlogPage = () => {
-  const blogs = [
-    { title: "Bí quyết chọn thuê căn hộ tại Quận 2 cho Expat", category: "Kinh nghiệm", img: "https://images.unsplash.com/photo-1542361345-89e58247f2d5?auto=format&fit=crop&q=80&w=800" },
-    { title: "Chi phí sinh hoạt trung bình tại TP.HCM năm 2026", category: "Tài chính", img: "https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?auto=format&fit=crop&q=80&w=800" },
-    { title: "Top 5 chung cư cao cấp có hồ bơi đẹp nhất Sài Gòn", category: "Khám phá", img: "https://images.unsplash.com/photo-1576013551627-0cc20b96c2a7?auto=format&fit=crop&q=80&w=800" },
-    { title: "Hướng dẫn làm thủ tục tạm trú cho người nước ngoài", category: "Pháp lý", img: "https://images.unsplash.com/photo-1450101499163-c8848c66ca85?auto=format&fit=crop&q=80&w=800" },
-    { title: "Phong cách Minimalism trong thiết kế căn hộ Studio", category: "Nội thất", img: "https://images.unsplash.com/photo-1493809842364-78817add7ffb?auto=format&fit=crop&q=80&w=800" },
-    { title: "Làm thế nào để thương lượng giá thuê nhà tốt nhất?", category: "Kinh nghiệm", img: "https://images.unsplash.com/photo-1556740738-b6a63e27c4df?auto=format&fit=crop&q=80&w=800" }
-  ];
+const BLOGS = [
+  {
+    id: 'chon-can-ho-quan-2',
+    title: 'Bí quyết chọn thuê căn hộ tại Quận 2 cho Expat',
+    category: 'Kinh nghiệm',
+    img: 'https://images.unsplash.com/photo-1542361345-89e58247f2d5?auto=format&fit=crop&q=80&w=1200',
+    intro: 'Quận 2, đặc biệt là Thảo Điền và An Phú, là lựa chọn quen thuộc của cộng đồng người nước ngoài nhờ môi trường sống xanh, tiện nghi và kết nối thuận lợi.',
+    sections: [
+      ['Ưu tiên vị trí phù hợp lịch sinh hoạt', 'Nếu thường xuyên làm việc tại Quận 1, hãy chọn căn hộ gần Xa lộ Hà Nội, cầu Sài Gòn hoặc ga Metro. Thảo Điền phù hợp với người thích nhà hàng, trường quốc tế và không gian sống sôi động; An Phú yên tĩnh hơn và thuận tiện đi về phía Đông thành phố.'],
+      ['Kiểm tra căn hộ trước khi đặt cọc', 'Hãy kiểm tra điều hòa, máy nước nóng, áp lực nước, thiết bị bếp, cách âm và tình trạng nội thất. Nên chụp ảnh hiện trạng, lập biên bản bàn giao và ghi rõ danh sách thiết bị đi kèm trong hợp đồng.'],
+      ['Đọc kỹ chi phí và điều khoản thuê', 'Ngoài tiền thuê, cần hỏi rõ phí quản lý, phí gửi xe, điện nước, internet, thời hạn báo trước và điều kiện hoàn cọc. Với người nước ngoài, chủ nhà cũng cần hỗ trợ đăng ký tạm trú đúng quy định.']
+    ]
+  },
+  {
+    id: 'chi-phi-sinh-hoat-tphcm',
+    title: 'Chi phí sinh hoạt trung bình tại TP.HCM năm 2026',
+    category: 'Tài chính',
+    img: 'https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?auto=format&fit=crop&q=80&w=1200',
+    intro: 'Ngân sách sinh hoạt tại TP.HCM phụ thuộc nhiều vào khu vực, loại căn hộ và thói quen cá nhân. Dưới đây là khung tham khảo giúp người thuê chủ động lập kế hoạch.',
+    sections: [
+      ['Tiền thuê và phí cố định', 'Căn hộ studio hoặc một phòng ngủ thường là lựa chọn tiết kiệm nhất. Ngoài tiền thuê hàng tháng, người thuê nên dự trù phí quản lý, gửi xe, internet và các dịch vụ riêng của tòa nhà.'],
+      ['Điện, nước và ăn uống', 'Chi phí điện tăng đáng kể nếu sử dụng điều hòa thường xuyên. Tự nấu ăn giúp tối ưu ngân sách, trong khi ăn tại nhà hàng quốc tế hoặc đặt món hàng ngày sẽ khiến tổng chi phí cao hơn đáng kể.'],
+      ['Đi lại và khoản dự phòng', 'Metro, xe buýt và xe công nghệ đều thuận tiện tại khu vực trung tâm. Một ngân sách tốt nên dành thêm khoảng 10–15% cho y tế, giải trí, sửa chữa nhỏ và các khoản phát sinh.']
+    ]
+  },
+  {
+    id: 'chung-cu-ho-boi-dep',
+    title: 'Top 5 chung cư cao cấp có hồ bơi đẹp nhất Sài Gòn',
+    category: 'Khám phá',
+    img: 'https://images.unsplash.com/photo-1576013551627-0cc20b96c2a7?auto=format&fit=crop&q=80&w=1200',
+    intro: 'Hồ bơi đẹp không chỉ phục vụ luyện tập mà còn tạo nên trải nghiệm nghỉ dưỡng ngay tại nhà. Đây là năm khu căn hộ thường được khách thuê cao cấp quan tâm.',
+    sections: [
+      ['Vinhomes Central Park và Landmark 81', 'Khu đô thị ven sông nổi bật với hồ bơi ngoài trời, cảnh quan rộng và hệ tiện ích đồng bộ. Vị trí Bình Thạnh giúp di chuyển nhanh về trung tâm.'],
+      ['Masteri Thảo Điền và Estella Heights', 'Hai lựa chọn nổi bật tại khu Đông với hồ bơi phong cách resort, nhiều mảng xanh, gần trung tâm thương mại và cộng đồng cư dân quốc tế.'],
+      ['The Metropole Thủ Thiêm', 'Các tòa căn hộ mới tại Thủ Thiêm sở hữu hồ bơi hiện đại và tầm nhìn đẹp về trung tâm. Khi chọn thuê, nên kiểm tra quy định sử dụng tiện ích và số thẻ cư dân được cấp.']
+    ]
+  },
+  {
+    id: 'tam-tru-nguoi-nuoc-ngoai',
+    title: 'Hướng dẫn làm thủ tục tạm trú cho người nước ngoài',
+    category: 'Pháp lý',
+    img: 'https://images.unsplash.com/photo-1450101499163-c8848c66ca85?auto=format&fit=crop&q=80&w=1200',
+    intro: 'Khai báo tạm trú là bước cần thiết khi người nước ngoài thuê và sinh sống tại Việt Nam. Chủ nhà hoặc đơn vị lưu trú thường là bên thực hiện thủ tục.',
+    sections: [
+      ['Chuẩn bị thông tin cần thiết', 'Thông thường cần hộ chiếu, thị thực hoặc giấy tờ cư trú còn hiệu lực, thông tin ngày nhập cảnh, địa chỉ căn hộ và hợp đồng thuê. Bản chụp cần rõ ràng và khớp với thông tin khai báo.'],
+      ['Thực hiện khai báo', 'Chủ nhà có thể khai báo qua cổng thông tin quản lý xuất nhập cảnh hoặc thực hiện theo hướng dẫn của công an địa phương. Việc khai báo nên được hoàn thành ngay sau khi khách đến cư trú.'],
+      ['Lưu ý cho người thuê', 'Hãy xác nhận trước khi ký hợp đồng rằng chủ nhà có thể hỗ trợ đăng ký tạm trú. Quy trình và yêu cầu hồ sơ có thể thay đổi, vì vậy nên kiểm tra lại với cơ quan có thẩm quyền tại thời điểm thực hiện.']
+    ]
+  },
+  {
+    id: 'minimalism-can-ho-studio',
+    title: 'Phong cách Minimalism trong thiết kế căn hộ Studio',
+    category: 'Nội thất',
+    img: 'https://images.unsplash.com/photo-1493809842364-78817add7ffb?auto=format&fit=crop&q=80&w=1200',
+    intro: 'Minimalism giúp căn hộ studio trở nên rộng, sáng và dễ sử dụng hơn bằng cách giảm chi tiết thừa và ưu tiên những món đồ có công năng rõ ràng.',
+    sections: [
+      ['Chọn bảng màu sáng và đồng nhất', 'Trắng, kem, be và màu gỗ nhạt giúp phản xạ ánh sáng tốt. Chỉ nên dùng một hoặc hai màu nhấn để không gian có chiều sâu mà vẫn giữ cảm giác gọn gàng.'],
+      ['Tận dụng nội thất đa năng', 'Giường có ngăn kéo, bàn gấp, sofa nhỏ và tủ cao sát trần giúp tăng khả năng lưu trữ. Nên đo kỹ kích thước trước khi mua để giữ lối đi thông thoáng.'],
+      ['Giảm đồ nhưng không giảm tiện nghi', 'Mỗi khu vực cần có chức năng rõ ràng. Ánh sáng nhiều lớp, rèm nhẹ và một vài cây xanh sẽ khiến căn hộ ấm áp hơn mà không làm mất tinh thần tối giản.']
+    ]
+  },
+  {
+    id: 'thuong-luong-gia-thue',
+    title: 'Làm thế nào để thương lượng giá thuê nhà tốt nhất?',
+    category: 'Kinh nghiệm',
+    img: 'https://images.unsplash.com/photo-1556740738-b6a63e27c4df?auto=format&fit=crop&q=80&w=1200',
+    intro: 'Một cuộc thương lượng hiệu quả cần dựa trên thông tin thị trường, sự rõ ràng về nhu cầu và một đề nghị hợp lý cho cả người thuê lẫn chủ nhà.',
+    sections: [
+      ['Khảo sát trước khi đưa ra mức giá', 'Hãy so sánh các căn hộ tương đương về vị trí, diện tích, nội thất và tiện ích. Căn đã để trống lâu hoặc cần sửa chữa nhỏ thường có nhiều dư địa thương lượng hơn.'],
+      ['Tạo lợi thế bằng điều kiện thuê', 'Cam kết thuê dài hạn, thanh toán đúng hạn, giữ gìn căn hộ và có hồ sơ rõ ràng là những yếu tố chủ nhà đánh giá cao. Đôi khi xin thêm nội thất hoặc miễn phí quản lý sẽ thực tế hơn giảm tiền thuê.'],
+      ['Ghi nhận mọi thỏa thuận', 'Mức giá, thời gian áp dụng, tiền cọc, ngày thanh toán và các hạng mục chủ nhà đồng ý bổ sung phải được ghi trong hợp đồng hoặc phụ lục trước khi chuyển tiền.']
+    ]
+  }
+];
+
+const BlogPage = ({ navigate }) => {
 
   return (
     <div className="min-h-screen pt-24 bg-gray-50 pb-20">
@@ -884,8 +951,8 @@ const BlogPage = () => {
           <p className="text-gray-500">Kiến thức, xu hướng và kinh nghiệm sống tại các căn hộ cao cấp Sài Gòn.</p>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {blogs.map((blog, idx) => (
-            <div key={idx} className="bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 cursor-pointer group">
+          {BLOGS.map((blog) => (
+            <article key={blog.id} onClick={() => navigate('blog-detail', blog.id)} className="bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 cursor-pointer group">
               <div className="h-48 overflow-hidden relative">
                 <img src={blog.img} alt={blog.title} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
                 <div className="absolute top-4 left-4 bg-white/90 px-3 py-1 rounded-full text-xs font-bold text-[#0A2540]">{blog.category}</div>
@@ -893,13 +960,50 @@ const BlogPage = () => {
               <div className="p-6">
                 <p className="text-xs text-gray-400 mb-2">28 Tháng 7, 2026</p>
                 <h3 className="font-bold text-lg text-[#0A2540] group-hover:text-[#FF5A5F] transition-colors mb-3 line-clamp-2">{blog.title}</h3>
-                <p className="text-sm text-gray-500 mb-4 line-clamp-2">Những thông tin hữu ích giúp bạn có quyết định đúng đắn và trải nghiệm cuộc sống trọn vẹn hơn tại thành phố...</p>
-                <div className="text-[#FF5A5F] font-medium text-sm flex items-center">Đọc tiếp <ChevronRight size={16} /></div>
+                <p className="text-sm text-gray-500 mb-4 line-clamp-2">{blog.intro}</p>
+                <button type="button" className="text-[#FF5A5F] font-medium text-sm flex items-center">Đọc tiếp <ChevronRight size={16} /></button>
               </div>
-            </div>
+            </article>
           ))}
         </div>
       </div>
+    </div>
+  );
+};
+
+const BlogDetailPage = ({ id, navigate }) => {
+  const blog = BLOGS.find(item => item.id === id);
+  if (!blog) return <BlogPage navigate={navigate} />;
+
+  return (
+    <div className="min-h-screen pt-24 bg-white pb-20">
+      <article className="max-w-4xl mx-auto px-4 md:px-8">
+        <button type="button" onClick={() => navigate('blog')} className="mt-6 mb-8 text-sm font-semibold text-[#FF5A5F] hover:underline">
+          ← Quay lại Blog & Cẩm nang
+        </button>
+        <div className="text-center mb-8">
+          <span className="inline-block bg-red-50 text-[#FF5A5F] px-4 py-1.5 rounded-full text-sm font-bold mb-5">{blog.category}</span>
+          <h1 className="text-3xl md:text-5xl leading-tight font-bold text-[#0A2540] mb-5">{blog.title}</h1>
+          <p className="text-gray-400 text-sm">28 Tháng 7, 2026 · Saigon Retreats</p>
+        </div>
+        <img src={blog.img} alt={blog.title} className="w-full h-[300px] md:h-[480px] object-cover rounded-3xl mb-10" />
+        <div className="max-w-3xl mx-auto">
+          <p className="text-xl leading-8 text-gray-600 mb-10">{blog.intro}</p>
+          {blog.sections.map(([heading, content]) => (
+            <section key={heading} className="mb-9">
+              <h2 className="text-2xl font-bold text-[#0A2540] mb-4">{heading}</h2>
+              <p className="text-gray-600 text-lg leading-8">{content}</p>
+            </section>
+          ))}
+          <div className="mt-12 p-7 md:p-9 rounded-2xl bg-[#0A2540] text-white">
+            <h2 className="text-2xl font-bold mb-3">Bạn cần tư vấn căn hộ?</h2>
+            <p className="text-white/70 mb-6">Saigon Retreats sẵn sàng hỗ trợ bạn tìm căn hộ phù hợp tại TP.HCM.</p>
+            <a href={CONTACT.phoneHref} className="inline-flex items-center gap-2 bg-[#FF5A5F] px-5 py-3 rounded-xl font-bold">
+              <Phone size={19} /> {CONTACT.phoneDisplay}
+            </a>
+          </div>
+        </div>
+      </article>
     </div>
   );
 };
@@ -1298,7 +1402,8 @@ export default function App() {
       case 'listings': return <ListingsPage navigate={navigate} apartments={apartments} />;
       case 'detail': return <DetailPage id={selectedId} navigate={navigate} apartments={apartments} />;
       case 'about': return <AboutPage />;
-      case 'blog': return <BlogPage />;
+      case 'blog': return <BlogPage navigate={navigate} />;
+      case 'blog-detail': return <BlogDetailPage id={selectedId} navigate={navigate} />;
       case 'contact': return <ContactPage />;
       case 'admin': return <AdminPage apartments={apartments} reloadApartments={reloadApartments} />;
       default: return <HomePage navigate={navigate} apartments={apartments} />;
