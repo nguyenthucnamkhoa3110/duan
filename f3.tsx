@@ -5,7 +5,7 @@ import {
   Menu, X, Phone, Mail, CheckCircle2, Star, Clock, 
   ArrowRight, ShieldCheck, Heart, Share, PlayCircle,
   Facebook, Instagram, Twitter, Map, Navigation, Upload, Trash2,
-  LogOut, Plus, LoaderCircle, Pencil, Save
+  LogOut, Plus, LoaderCircle, Pencil, Save, Building2, TrainFront
 } from 'lucide-react';
 import { hasSupabaseConfig, listApartments, supabase, uploadApartmentImages } from './src/lib/supabase';
 
@@ -15,7 +15,9 @@ const AMENITIES = {
   pool: { icon: <Waves size={18} />, label: 'Hồ bơi' },
   gym: { icon: <Dumbbell size={18} />, label: 'Phòng Gym' },
   pet: { icon: <PawPrint size={18} />, label: 'Pet Friendly' },
-  washer: { icon: <Maximize size={18} />, label: 'Máy giặt riêng' }
+  washer: { icon: <Maximize size={18} />, label: 'Máy giặt riêng' },
+  elevator: { icon: <Building2 size={18} />, label: 'Thang máy' },
+  metro: { icon: <TrainFront size={18} />, label: 'Gần Metro' }
 };
 
 const DEFAULT_APARTMENTS = [
