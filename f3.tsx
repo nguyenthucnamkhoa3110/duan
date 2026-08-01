@@ -184,8 +184,18 @@ const Button = ({ children, variant = 'primary', className = '', ...props }) => 
 const ApartmentCard = ({ data, onClick, isFavorite = false, onFavorite }) => {
   return (
     <div 
+      role="link"
+      tabIndex={0}
+      aria-label={`Xem chi tiết ${data.title}`}
       className="group bg-white rounded-2xl overflow-hidden border border-gray-100 shadow-[0_4px_20px_rgb(0,0,0,0.03)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] transition-all duration-500 cursor-pointer flex flex-col h-full"
       onClick={() => onClick(data.id)}
+      onKeyDown={(event) => {
+        if (event.target !== event.currentTarget) return;
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault();
+          onClick(data.id);
+        }
+      }}
     >
       <div className="relative aspect-[4/3] overflow-hidden">
         <img 
@@ -547,6 +557,11 @@ const ListingsPage = ({ navigate, apartments, initialFilters, onFiltersChange, f
   const [filters, setFilters] = useState(initialFilters);
   const [sort, setSort] = useState('recommended');
   useEffect(() => { onFiltersChange(filters); }, [filters]);
+  useEffect(() => {
+    setFilters(current => current.district === initialFilters.district
+      ? current
+      : { ...current, district: initialFilters.district });
+  }, [initialFilters.district]);
   
   const handleAmenityChange = (amenity) => {
     setFilters(prev => ({
@@ -600,8 +615,9 @@ const ListingsPage = ({ navigate, apartments, initialFilters, onFiltersChange, f
               
               <div className="space-y-6">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Khu vực</label>
+                  <label htmlFor="listing-district" className="block text-sm font-medium text-gray-700 mb-2">Khu vực</label>
                   <select 
+                    id="listing-district"
                     className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:border-[#0A2540] transition-colors"
                     value={filters.district}
                     onChange={(e) => setFilters({...filters, district: e.target.value})}
@@ -612,8 +628,9 @@ const ListingsPage = ({ navigate, apartments, initialFilters, onFiltersChange, f
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Loại phòng</label>
+                  <label htmlFor="listing-type" className="block text-sm font-medium text-gray-700 mb-2">Loại phòng</label>
                   <select 
+                    id="listing-type"
                     className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:border-[#0A2540] transition-colors"
                     value={filters.type}
                     onChange={(e) => setFilters({...filters, type: e.target.value})}
@@ -629,8 +646,9 @@ const ListingsPage = ({ navigate, apartments, initialFilters, onFiltersChange, f
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Khoảng giá</label>
+                  <label htmlFor="listing-price" className="block text-sm font-medium text-gray-700 mb-2">Khoảng giá</label>
                   <select 
+                    id="listing-price"
                     className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:border-[#0A2540] transition-colors"
                     value={filters.priceRange}
                     onChange={(e) => setFilters({...filters, priceRange: e.target.value})}
@@ -647,7 +665,13 @@ const ListingsPage = ({ navigate, apartments, initialFilters, onFiltersChange, f
                   <div className="space-y-3">
                     {Object.entries(AMENITIES).map(([key, data]) => (
                       <label key={key} className="flex items-center gap-3 cursor-pointer group">
-                        <div className={`w-5 h-5 rounded border flex items-center justify-center transition-colors ${filters.amenities.includes(key) ? 'bg-[#FF5A5F] border-[#FF5A5F]' : 'border-gray-300 group-hover:border-[#FF5A5F]'}`}>
+                        <input
+                          type="checkbox"
+                          className="sr-only"
+                          checked={filters.amenities.includes(key)}
+                          onChange={() => handleAmenityChange(key)}
+                        />
+                        <div aria-hidden="true" className={`w-5 h-5 rounded border flex items-center justify-center transition-colors ${filters.amenities.includes(key) ? 'bg-[#FF5A5F] border-[#FF5A5F]' : 'border-gray-300 group-hover:border-[#FF5A5F]'}`}>
                           {filters.amenities.includes(key) && <CheckCircle2 size={14} className="text-white" />}
                         </div>
                         <span className="text-gray-600 text-sm group-hover:text-gray-900 flex items-center gap-2">
@@ -672,8 +696,8 @@ const ListingsPage = ({ navigate, apartments, initialFilters, onFiltersChange, f
           {/* Grid view */}
           <div className="flex-1">
             <div className="flex justify-between items-center mb-6 bg-white p-4 rounded-2xl shadow-sm border border-gray-100">
-               <span className="text-sm text-gray-500">Sắp xếp theo:</span>
-               <select value={sort} onChange={event => setSort(event.target.value)} className="border-none bg-transparent font-medium text-[#0A2540] outline-none cursor-pointer">
+               <label htmlFor="listing-sort" className="text-sm text-gray-500">Sắp xếp theo:</label>
+               <select id="listing-sort" value={sort} onChange={event => setSort(event.target.value)} className="border-none bg-transparent font-medium text-[#0A2540] outline-none cursor-pointer">
                  <option value="recommended">Đề xuất</option>
                  <option value="price-asc">Giá thấp - cao</option>
                  <option value="price-desc">Giá cao - thấp</option>
@@ -1199,6 +1223,7 @@ const ContactPage = () => (
 
 const AuthPage = ({ mode, navigate }) => {
   const isRegister = mode === 'register';
+  const googleAuthEnabled = import.meta.env.VITE_GOOGLE_AUTH_ENABLED === 'true';
   const [form, setForm] = useState({ username: '', displayName: '', email: '', password: '', confirmPassword: '' });
   const [status, setStatus] = useState('');
   const [busy, setBusy] = useState(false);
@@ -1243,8 +1268,10 @@ const AuthPage = ({ mode, navigate }) => {
       <div className="max-w-md mx-auto bg-white rounded-3xl p-8 border shadow-sm">
         <h1 className="text-3xl font-bold text-[#0A2540] mb-2">{isRegister ? 'Tạo tài khoản' : 'Đăng nhập'}</h1>
         <p className="text-gray-500 mb-7">Lưu và quản lý những căn hộ bạn quan tâm.</p>
-        <button type="button" onClick={googleLogin} className="w-full py-3 rounded-xl border font-semibold mb-5 hover:bg-gray-50">Tiếp tục với Google</button>
-        <div className="flex items-center gap-3 text-xs text-gray-400 mb-5"><span className="h-px bg-gray-200 flex-1" />hoặc<span className="h-px bg-gray-200 flex-1" /></div>
+        {googleAuthEnabled && <>
+          <button type="button" onClick={googleLogin} className="w-full py-3 rounded-xl border font-semibold mb-5 hover:bg-gray-50">Tiếp tục với Google</button>
+          <div className="flex items-center gap-3 text-xs text-gray-400 mb-5"><span className="h-px bg-gray-200 flex-1" />hoặc<span className="h-px bg-gray-200 flex-1" /></div>
+        </>}
         <form onSubmit={submit} className="space-y-4">
           {isRegister && <input required value={form.displayName} onChange={e => update('displayName', e.target.value)} className="w-full p-3 border rounded-xl" placeholder="Họ và tên" />}
           <input required value={form.username} onChange={e => update('username', e.target.value.toLowerCase())} className="w-full p-3 border rounded-xl" placeholder="Tên đăng nhập" pattern="[a-z0-9_]{3,30}" />
@@ -1748,7 +1775,7 @@ export default function App() {
       setCurrentRoute(location.route);
       setSelectedId(location.id);
       setListingDistrict(location.district);
-      if (location.route === 'listings' && location.district) {
+      if (location.route === 'listings') {
         setListingFilters(current => ({ ...current, district: location.district }));
       }
     };
@@ -1764,7 +1791,7 @@ export default function App() {
     setCurrentRoute(route);
     if (route === 'listings') {
       setListingDistrict(id || '');
-      if (id) setListingFilters(current => ({ ...current, district: id }));
+      setListingFilters(current => ({ ...current, district: id || '' }));
     }
     if (id && route !== 'listings') setSelectedId(id);
   };
@@ -1790,7 +1817,13 @@ export default function App() {
   const renderContent = () => {
     switch (currentRoute) {
       case 'home': return <HomePage navigate={navigate} apartments={apartments} favoriteIds={favoriteIds} onFavorite={toggleFavorite} />;
-      case 'listings': return <ListingsPage navigate={navigate} apartments={apartments} initialFilters={listingFilters} onFiltersChange={setListingFilters} favoriteIds={favoriteIds} onFavorite={toggleFavorite} />;
+      case 'listings': return <ListingsPage navigate={navigate} apartments={apartments} initialFilters={listingFilters} onFiltersChange={(nextFilters) => {
+        setListingFilters(nextFilters);
+        if (currentRoute === 'listings') {
+          const nextPath = pathForRoute('listings', nextFilters.district || null);
+          if (`${window.location.pathname}${window.location.search}` !== nextPath) window.history.replaceState({}, '', nextPath);
+        }
+      }} favoriteIds={favoriteIds} onFavorite={toggleFavorite} />;
       case 'detail': return <DetailPage id={selectedId} navigate={navigate} apartments={apartments} favoriteIds={favoriteIds} onFavorite={toggleFavorite} />;
       case 'about': return <AboutPage />;
       case 'blog': return <BlogPage navigate={navigate} />;
