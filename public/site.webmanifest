@@ -1,0 +1,12 @@
+{
+  "name": "Saigon Retreats",
+  "short_name": "Saigon Retreats",
+  "description": "Căn hộ cho thuê tại TP.HCM",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#0A2540",
+  "icons": [
+    { "src": "/favicon.png", "sizes": "64x64", "type": "image/png", "purpose": "any" }
+  ]
+}

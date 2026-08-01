@@ -8,8 +8,7 @@ import {
   LogOut, Plus, LoaderCircle, Pencil, Save, Building2, TrainFront
 } from 'lucide-react';
 import {
-  getMyProfile, hasSupabaseConfig, listApartments, listFavoriteIds,
-  setFavorite, supabase, uploadApartmentImages, usernameAuth
+  getMyProfile, hasSupabaseConfig, listApartments, supabase, uploadApartmentImages, usernameAuth
 } from './src/lib/supabase';
 
 const AMENITIES = {
@@ -41,120 +40,6 @@ const CONTACT = {
   address: 'Số 2 Trần Quang Khải, Phường Tân Định, Quận 1, TP.HCM'
 };
 
-const DEFAULT_APARTMENTS = [
-  {
-    id: 1,
-    title: 'The Cloud Oasis - Thảo Điền River View',
-    type: '2PN',
-    district: 'Quận 2',
-    price: 25000000,
-    area: 85,
-    images: [
-      'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&q=80&w=1200',
-      'https://images.unsplash.com/photo-1502672260266-1c1de2d93688?auto=format&fit=crop&q=80&w=800',
-      'https://images.unsplash.com/photo-1484154218962-a197022b5858?auto=format&fit=crop&q=80&w=800'
-    ],
-    amenities: ['balcony', 'pool', 'gym', 'pet', 'washer'],
-    description: 'Trải nghiệm cuộc sống như một kỳ nghỉ dưỡng tại The Cloud Oasis. Căn hộ 2 phòng ngủ ngập tràn ánh sáng tự nhiên với ban công rộng nhìn toàn cảnh sông Sài Gòn. Nội thất được thiết kế đo ni đóng giày mang phong cách Wabi-Sabi tĩnh lặng, là chốn về hoàn hảo sau một ngày làm việc căng thẳng tại trung tâm.',
-    featured: true,
-    views: 1204
-  },
-  {
-    id: 2,
-    title: 'Urban Minimalist Studio Q1',
-    type: 'Studio',
-    district: 'Quận 1',
-    price: 12000000,
-    area: 35,
-    images: [
-      'https://images.unsplash.com/photo-1536376072261-38c75010e6c9?auto=format&fit=crop&q=80&w=1200',
-      'https://images.unsplash.com/photo-1493809842364-78817add7ffb?auto=format&fit=crop&q=80&w=800'
-    ],
-    amenities: ['washer', 'gym'],
-    description: 'Nằm ngay lõi trung tâm Quận 1, bước chân xuống phố là hàng ngàn tiện ích. Căn studio được thiết kế thông minh, tối ưu không gian sống cho giới trẻ năng động hoặc Expat.',
-    featured: false,
-    views: 850
-  },
-  {
-    id: 3,
-    title: 'Sky Penthouse Landmark 81',
-    type: 'Penthouse',
-    district: 'Bình Thạnh',
-    price: 120000000,
-    area: 250,
-    images: [
-      'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&q=80&w=1200',
-      'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&q=80&w=800'
-    ],
-    amenities: ['balcony', 'bathtub', 'pool', 'gym', 'washer'],
-    description: 'Đẳng cấp thượng lưu trên đỉnh thành phố. View 360 độ ngắm toàn cảnh Sài Gòn phồn hoa. Hệ thống smarthome toàn diện và tiện ích 5 sao đặc quyền.',
-    featured: true,
-    views: 3200
-  },
-  {
-    id: 4,
-    title: 'Cozy Vintage Duplex Quận 3',
-    type: 'Duplex',
-    district: 'Quận 3',
-    price: 18000000,
-    area: 65,
-    images: [
-      'https://images.unsplash.com/photo-1554995207-c18c203602cb?auto=format&fit=crop&q=80&w=1200',
-      'https://images.unsplash.com/photo-1505691938895-1758d7feb511?auto=format&fit=crop&q=80&w=800'
-    ],
-    amenities: ['balcony', 'pet', 'washer'],
-    description: 'Một nốt trầm xao xuyến giữa phố thị. Nằm trong con hẻm yên tĩnh rợp bóng cây xanh tại Quận 3. Thiết kế Duplex mộc mạc với gạch trần và ánh sáng vàng ấm áp.',
-    featured: false,
-    views: 640
-  },
-  {
-    id: 5,
-    title: 'Phu My Hung Green View 1BR',
-    type: '1PN',
-    district: 'Quận 7',
-    price: 14000000,
-    area: 50,
-    images: [
-      'https://images.unsplash.com/photo-1502005229762-cf1b2da7c5d6?auto=format&fit=crop&q=80&w=1200',
-      'https://images.unsplash.com/photo-1499916078039-922301b0eb9b?auto=format&fit=crop&q=80&w=800'
-    ],
-    amenities: ['pool', 'gym', 'washer', 'balcony'],
-    description: 'Sống chuẩn Hàn Quốc tại khu Nam Sài Gòn. Căn hộ 1PN thiết kế tinh gọn, view trực diện công viên nội khu xanh mát, an ninh 24/7.',
-    featured: false,
-    views: 520
-  },
-  {
-    id: 6,
-    title: 'The Botanica Serenity',
-    type: '2PN',
-    district: 'Tân Bình',
-    price: 16000000,
-    area: 72,
-    images: [
-      'https://images.unsplash.com/photo-1493809842364-78817add7ffb?auto=format&fit=crop&q=80&w=1200',
-      'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&q=80&w=800'
-    ],
-    amenities: ['pool', 'gym', 'balcony'],
-    description: 'Kề sát sân bay Tân Sơn Nhất và công viên Gia Định. Môi trường sống trong lành, thuận tiện di chuyển, lý tưởng cho phi hành đoàn và doanh nhân thường xuyên công tác.',
-    featured: true,
-    views: 950
-  },
-  { id: 7, title: 'Riverside Charm 1PN', type: '1PN', district: 'Quận 4', price: 15500000, area: 55, images: ['https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&q=80&w=1200'], amenities: ['balcony', 'pool', 'gym', 'washer'], description: 'View rạch Bến Nghé thơ mộng, chỉ 3 phút qua Quận 1.', featured: false, views: 400 },
-  { id: 8, title: 'Thao Dien Art Studio', type: 'Studio', district: 'Quận 2', price: 11000000, area: 40, images: ['https://images.unsplash.com/photo-1541123437800-1c0c05a12972?auto=format&fit=crop&q=80&w=1200'], amenities: ['pet', 'washer'], description: 'Studio mang hơi hướng nghệ thuật đương đại, phù hợp freelancer.', featured: false, views: 350 },
-  { id: 9, title: 'Masteri Thao Dien Family Home', type: '3PN', district: 'Quận 2', price: 32000000, area: 105, images: ['https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&q=80&w=1200'], amenities: ['balcony', 'bathtub', 'pool', 'gym', 'washer'], description: 'Căn góc 3 phòng ngủ thoáng mát, kề cận Mega Mall và ga Metro.', featured: true, views: 1100 },
-  { id: 10, title: 'Bitexco View Minimal', type: '1PN', district: 'Quận 1', price: 17000000, area: 48, images: ['https://images.unsplash.com/photo-1512918728675-ed5a9ecdebfd?auto=format&fit=crop&q=80&w=1200'], amenities: ['gym', 'washer'], description: 'Tầm nhìn triệu đô về tòa tháp biểu tượng, thiết kế tối giản sang trọng.', featured: false, views: 780 },
-  { id: 11, title: 'Sunrise City Premium 2BR', type: '2PN', district: 'Quận 7', price: 19000000, area: 76, images: ['https://images.unsplash.com/photo-1484154218962-a197022b5858?auto=format&fit=crop&q=80&w=1200'], amenities: ['pool', 'gym', 'balcony', 'washer'], description: 'Khu dân cư cao cấp mặt tiền Nguyễn Hữu Thọ, tiện ích chuẩn 5 sao.', featured: false, views: 500 },
-  { id: 12, title: 'Estella Heights Resort Style', type: '2PN', district: 'Quận 2', price: 28000000, area: 89, images: ['https://images.unsplash.com/photo-1494438639946-1ebd1d20bf85?auto=format&fit=crop&q=80&w=1200'], amenities: ['balcony', 'bathtub', 'pool', 'gym', 'washer'], description: 'Resort giữa lòng thành phố với hệ thống hồ bơi lười tuyệt đẹp.', featured: true, views: 1500 },
-  { id: 13, title: 'Vinhomes Central Park Modern', type: '1PN', district: 'Bình Thạnh', price: 16500000, area: 54, images: ['https://images.unsplash.com/photo-1502672260266-1c1de2d93688?auto=format&fit=crop&q=80&w=1200'], amenities: ['pool', 'gym', 'balcony', 'washer'], description: 'Thừa hưởng trọn vẹn công viên ven sông 14ha và tiện ích nội khu đẳng cấp.', featured: false, views: 890 },
-  { id: 14, title: 'Saigon Pearl Classic 3BR', type: '3PN', district: 'Bình Thạnh', price: 35000000, area: 120, images: ['https://images.unsplash.com/photo-1554995207-c18c203602cb?auto=format&fit=crop&q=80&w=1200'], amenities: ['balcony', 'bathtub', 'pool', 'gym', 'washer'], description: 'Thiết kế bán cổ điển sang trọng, môi trường sống tinh hoa bên sông.', featured: false, views: 420 },
-  { id: 15, title: 'Tresor Rivergate 2BR', type: '2PN', district: 'Quận 4', price: 22000000, area: 75, images: ['https://images.unsplash.com/photo-1505691938895-1758d7feb511?auto=format&fit=crop&q=80&w=1200'], amenities: ['pool', 'gym', 'balcony', 'washer'], description: 'Vị trí đắc địa mặt tiền Bến Vân Đồn, sầm uất và nhộn nhịp.', featured: false, views: 600 },
-  { id: 16, title: 'Lexington Residence Studio', type: 'Studio', district: 'Quận 2', price: 12500000, area: 48, images: ['https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&q=80&w=1200'], amenities: ['pool', 'gym', 'washer'], description: 'Studio rộng rãi, thiết kế thông minh, khu dân cư sầm uất.', featured: false, views: 380 },
-  { id: 17, title: 'Gateway Thao Dien Duplex', type: 'Duplex', district: 'Quận 2', price: 45000000, area: 140, images: ['https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&q=80&w=1200'], amenities: ['balcony', 'bathtub', 'pool', 'gym', 'pet', 'washer'], description: 'Không gian sống xa hoa với tầm nhìn panorama mãn nhãn.', featured: true, views: 2100 },
-  { id: 18, title: 'City Garden Ellipse 2BR', type: '2PN', district: 'Bình Thạnh', price: 27000000, area: 104, images: ['https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&q=80&w=1200'], amenities: ['balcony', 'bathtub', 'pool', 'gym', 'washer'], description: 'Thiết kế lượn sóng độc đáo, ban công vòng cung siêu rộng ấn tượng.', featured: true, views: 1800 },
-  { id: 19, title: 'Happy Valley Peaceful 2BR', type: '2PN', district: 'Quận 7', price: 20000000, area: 82, images: ['https://images.unsplash.com/photo-1502005229762-cf1b2da7c5d6?auto=format&fit=crop&q=80&w=1200'], amenities: ['pool', 'gym', 'balcony', 'pet', 'washer'], description: 'Mật độ xanh cao, kề cận dòng sông hiền hòa và các trường quốc tế.', featured: false, views: 450 },
-  { id: 20, title: 'Millennium Masteri 1BR', type: '1PN', district: 'Quận 4', price: 18500000, area: 53, images: ['https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&q=80&w=1200'], amenities: ['pool', 'gym', 'balcony', 'washer'], description: 'Biểu tượng mới của Quận 4, chất lượng hoàn thiện tuyệt hảo.', featured: false, views: 550 },
-];
-
 const useScrollToTop = (route) => {
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -170,7 +55,7 @@ const Button = ({ children, variant = 'primary', className = '', ...props }) => 
   const variants = {
     primary: "bg-[#0A2540] text-white hover:bg-[#0A2540]/90 shadow-md hover:shadow-xl",
     secondary: "bg-white text-[#0A2540] border border-gray-200 hover:border-[#0A2540] hover:bg-gray-50",
-    accent: "bg-[#FF5A5F] text-white hover:bg-[#FF5A5F]/90 shadow-md hover:shadow-xl hover:scale-[1.02]",
+    accent: "bg-[#D83A42] text-white hover:bg-[#BE2E36] shadow-md hover:shadow-xl hover:scale-[1.02]",
     ghost: "bg-transparent text-gray-600 hover:text-[#0A2540] hover:bg-gray-100"
   };
   
@@ -181,40 +66,32 @@ const Button = ({ children, variant = 'primary', className = '', ...props }) => 
   );
 };
 
-const ApartmentCard = ({ data, onClick, isFavorite = false, onFavorite }) => {
+const ApartmentCard = ({ data, onClick }) => {
   return (
-    <div 
-      role="link"
-      tabIndex={0}
-      aria-label={`Xem chi tiết ${data.title}`}
+    <a
+      href={pathForRoute('detail', data.id)}
+      aria-label={`Xem chi tiết căn hộ ${data.title}`}
       className="group bg-white rounded-2xl overflow-hidden border border-gray-100 shadow-[0_4px_20px_rgb(0,0,0,0.03)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] transition-all duration-500 cursor-pointer flex flex-col h-full"
-      onClick={() => onClick(data.id)}
-      onKeyDown={(event) => {
-        if (event.target !== event.currentTarget) return;
-        if (event.key === 'Enter' || event.key === ' ') {
-          event.preventDefault();
-          onClick(data.id);
-        }
+      onClick={(event) => {
+        if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+        event.preventDefault();
+        onClick(data.id);
       }}
     >
       <div className="relative aspect-[4/3] overflow-hidden">
-        <img 
-          src={data.images[0]} 
-          alt={data.title} 
-          loading="lazy"
-          className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-        />
+        {data.images?.[0] ? (
+          <img
+            src={data.images[0]}
+            alt={data.title}
+            loading="lazy"
+            className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+          />
+        ) : (
+          <div className="w-full h-full bg-slate-100 flex items-center justify-center text-sm text-slate-500">Chưa có hình ảnh</div>
+        )}
         <div className="absolute top-4 left-4 bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full text-sm font-semibold text-[#0A2540]">
           {data.type}
         </div>
-        <button
-          type="button"
-          aria-label={isFavorite ? 'Bỏ lưu căn hộ' : 'Lưu căn hộ'}
-          onClick={(event) => { event.stopPropagation(); onFavorite?.(data.id); }}
-          className={`absolute top-4 right-4 p-2 bg-white/90 backdrop-blur-sm rounded-full hover:text-[#FF5A5F] transition-colors ${isFavorite ? 'text-[#FF5A5F]' : 'text-gray-400'}`}
-        >
-          <Heart size={18} fill={isFavorite ? 'currentColor' : 'none'} />
-        </button>
       </div>
       
       <div className="p-5 flex flex-col flex-grow">
@@ -238,16 +115,22 @@ const ApartmentCard = ({ data, onClick, isFavorite = false, onFavorite }) => {
             <span className="text-xs text-gray-500 block mb-0.5">Giá thuê</span>
             <span className="text-xl font-bold text-[#FF5A5F]">{formatPrice(data.price)}<span className="text-sm font-normal text-gray-500">/tháng</span></span>
           </div>
-          <Button variant="secondary" className="px-4 py-2 text-sm rounded-lg">
+          <span className="inline-flex items-center justify-center px-4 py-2 text-sm rounded-lg bg-white text-[#0A2540] border border-gray-200 group-hover:border-[#0A2540] group-hover:bg-gray-50 transition-colors">
             Chi tiết
-          </Button>
+          </span>
         </div>
       </div>
-    </div>
+    </a>
   );
 };
 
-const Header = ({ currentRoute, navigate, profile, onSignOut }) => {
+const handleRouteLink = (event, callback) => {
+  if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+  event.preventDefault();
+  callback();
+};
+
+const Header = ({ currentRoute, navigate }) => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
@@ -272,9 +155,11 @@ const Header = ({ currentRoute, navigate, profile, onSignOut }) => {
     <header className={`fixed w-full z-50 transition-all duration-300 ${isScrolled ? 'bg-white/80 backdrop-blur-md shadow-sm py-3' : 'bg-transparent py-5'}`}>
       <div className="container mx-auto px-4 md:px-8 flex items-center justify-between">
         {/* Logo */}
-        <div 
+        <a
+          href="/"
+          aria-label="Saigon Retreats - Trang chủ"
           className="flex items-center gap-2 cursor-pointer"
-          onClick={() => navigate('home')}
+          onClick={(event) => handleRouteLink(event, () => navigate('home'))}
         >
           <div className="w-8 h-8 bg-[#FF5A5F] rounded-lg flex items-center justify-center transform rotate-3">
             <Home className="text-white" size={20} />
@@ -282,45 +167,41 @@ const Header = ({ currentRoute, navigate, profile, onSignOut }) => {
           <span className={`text-xl font-bold tracking-tight ${isScrolled || currentRoute !== 'home' ? 'text-[#0A2540]' : 'text-white'}`}>
             Saigon<span className="text-[#FF5A5F]">Retreats</span>
           </span>
-        </div>
+        </a>
 
         {/* Desktop Nav */}
-        <nav className="hidden md:flex items-center gap-8">
+        <nav className="hidden md:flex items-center gap-8" aria-label="Điều hướng chính">
           {navLinks.map((link) => (
-            <button
+            <a
               key={link.route}
-              onClick={() => navigate(link.route)}
+              href={pathForRoute(link.route)}
+              aria-current={isActive(link.route) ? 'page' : undefined}
+              onClick={(event) => handleRouteLink(event, () => navigate(link.route))}
               className={`text-sm font-medium transition-colors hover:text-[#FF5A5F] ${
                 isActive(link.route)
-                  ? 'text-[#FF5A5F]' 
+                  ? 'text-[#FF5A5F]'
                   : (isScrolled || currentRoute !== 'home' ? 'text-gray-600' : 'text-white/90')
               }`}
             >
               {link.name}
-            </button>
+            </a>
           ))}
         </nav>
 
         {/* CTA & Mobile Toggle */}
         <div className="flex items-center gap-4">
-          <Button 
-            variant={isScrolled || currentRoute !== 'home' ? 'primary' : 'secondary'} 
-            className="hidden md:flex px-5 py-2.5 text-sm"
-            onClick={() => navigate('contact')}
+          <a
+            href={CONTACT.zalo}
+            target="_blank"
+            rel="noreferrer"
+            className={`hidden md:inline-flex items-center justify-center px-5 py-2.5 text-sm font-semibold rounded-xl transition-all shadow-md ${isScrolled || currentRoute !== 'home' ? 'bg-[#0A2540] text-white hover:bg-[#123b61]' : 'bg-white text-[#0A2540] hover:bg-gray-50'}`}
           >
             Ký gửi căn hộ
-          </Button>
-          {profile ? (
-            <button onClick={() => navigate('account')} className="hidden md:block text-sm font-semibold text-[#0A2540] hover:text-[#FF5A5F]">
-              {profile.display_name}
-            </button>
-          ) : (
-            <button onClick={() => navigate('login')} className={`hidden md:block text-sm font-semibold ${isScrolled || currentRoute !== 'home' ? 'text-[#0A2540]' : 'text-white'}`}>
-              Đăng nhập
-            </button>
-          )}
-          
-          <button 
+          </a>
+          <button
+            type="button"
+            aria-label={mobileMenuOpen ? 'Đóng menu điều hướng' : 'Mở menu điều hướng'}
+            aria-expanded={mobileMenuOpen}
             className={`md:hidden p-2 ${isScrolled || currentRoute !== 'home' ? 'text-gray-900' : 'text-white'}`}
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
           >
@@ -331,30 +212,24 @@ const Header = ({ currentRoute, navigate, profile, onSignOut }) => {
 
       {/* Mobile Menu */}
       {mobileMenuOpen && (
-        <div className="absolute top-full left-0 w-full bg-white shadow-xl py-4 flex flex-col md:hidden border-t border-gray-100">
+        <nav className="absolute top-full left-0 w-full bg-white shadow-xl py-4 flex flex-col md:hidden border-t border-gray-100" aria-label="Điều hướng di động">
           {navLinks.map((link) => (
-            <button
+            <a
               key={link.route}
-              onClick={() => { navigate(link.route); setMobileMenuOpen(false); }}
+              href={pathForRoute(link.route)}
+              aria-current={isActive(link.route) ? 'page' : undefined}
+              onClick={(event) => handleRouteLink(event, () => { navigate(link.route); setMobileMenuOpen(false); })}
               className={`py-3 px-6 text-left font-medium ${isActive(link.route) ? 'text-[#FF5A5F] bg-gray-50' : 'text-gray-800'}`}
             >
               {link.name}
-            </button>
+            </a>
           ))}
           <div className="px-6 pt-4 mt-2 border-t border-gray-100">
-             <Button variant="primary" className="w-full py-3" onClick={() => { navigate('contact'); setMobileMenuOpen(false); }}>
+            <a href={CONTACT.zalo} target="_blank" rel="noreferrer" className="w-full py-3 rounded-xl bg-[#0A2540] text-white font-semibold flex items-center justify-center">
               Ký gửi căn hộ
-            </Button>
-            {profile ? (
-              <>
-                <button onClick={() => { navigate('saved'); setMobileMenuOpen(false); }} className="w-full py-3 text-left font-medium">Căn hộ đã lưu</button>
-                <button onClick={() => { onSignOut(); setMobileMenuOpen(false); }} className="w-full py-3 text-left font-medium text-red-600">Đăng xuất</button>
-              </>
-            ) : (
-              <button onClick={() => { navigate('login'); setMobileMenuOpen(false); }} className="w-full py-3 text-left font-medium">Đăng nhập</button>
-            )}
+            </a>
           </div>
-        </div>
+        </nav>
       )}
     </header>
   );
@@ -365,14 +240,14 @@ const Footer = ({ navigate }) => (
     <div className="container mx-auto px-4 md:px-8">
       <div className="grid grid-cols-1 md:grid-cols-4 gap-12 mb-16">
         <div className="md:col-span-1">
-          <div className="flex items-center gap-2 mb-6">
+          <a href="/" onClick={(event) => handleRouteLink(event, () => navigate('home'))} className="flex items-center gap-2 mb-6" aria-label="Saigon Retreats - Trang chủ">
             <div className="w-8 h-8 bg-[#FF5A5F] rounded-lg flex items-center justify-center transform rotate-3">
               <Home className="text-white" size={20} />
             </div>
             <span className="text-xl font-bold tracking-tight text-white">
               Saigon<span className="text-[#FF5A5F]">Retreats</span>
             </span>
-          </div>
+          </a>
           <p className="text-sm text-gray-400 leading-relaxed mb-6">
             Chúng tôi định hình lại cách bạn tìm kiếm và trải nghiệm không gian sống tại TP.HCM. Cung cấp căn hộ cao cấp cho Expat, chuyên gia và người trẻ hiện đại.
           </p>
@@ -385,22 +260,22 @@ const Footer = ({ navigate }) => (
         <div>
           <h4 className="text-white font-semibold mb-6">Khám phá</h4>
           <ul className="space-y-4 text-sm">
-            <li><button onClick={() => navigate('listings', 'Quận 1')} className="hover:text-[#FF5A5F] transition-colors">Căn hộ Quận 1</button></li>
-            <li><button onClick={() => navigate('listings', 'Quận 2')} className="hover:text-[#FF5A5F] transition-colors">Căn hộ Quận 2 (Thảo Điền)</button></li>
-            <li><button onClick={() => navigate('listings', 'Quận 3')} className="hover:text-[#FF5A5F] transition-colors">Căn hộ Quận 3</button></li>
-            <li><button onClick={() => navigate('listings', 'Quận 7')} className="hover:text-[#FF5A5F] transition-colors">Căn hộ Quận 7 (Phú Mỹ Hưng)</button></li>
-            <li><button onClick={() => navigate('listings', 'Quận Bình Thạnh')} className="hover:text-[#FF5A5F] transition-colors">Căn hộ Bình Thạnh</button></li>
+            <li><a href={pathForRoute('listings', 'Quận 1')} onClick={(event) => handleRouteLink(event, () => navigate('listings', 'Quận 1'))} className="hover:text-[#FF5A5F] transition-colors">Căn hộ Quận 1</a></li>
+            <li><a href={pathForRoute('listings', 'Quận 2')} onClick={(event) => handleRouteLink(event, () => navigate('listings', 'Quận 2'))} className="hover:text-[#FF5A5F] transition-colors">Căn hộ Quận 2 (Thảo Điền)</a></li>
+            <li><a href={pathForRoute('listings', 'Quận 3')} onClick={(event) => handleRouteLink(event, () => navigate('listings', 'Quận 3'))} className="hover:text-[#FF5A5F] transition-colors">Căn hộ Quận 3</a></li>
+            <li><a href={pathForRoute('listings', 'Quận 7')} onClick={(event) => handleRouteLink(event, () => navigate('listings', 'Quận 7'))} className="hover:text-[#FF5A5F] transition-colors">Căn hộ Quận 7 (Phú Mỹ Hưng)</a></li>
+            <li><a href={pathForRoute('listings', 'Quận Bình Thạnh')} onClick={(event) => handleRouteLink(event, () => navigate('listings', 'Quận Bình Thạnh'))} className="hover:text-[#FF5A5F] transition-colors">Căn hộ Bình Thạnh</a></li>
           </ul>
         </div>
 
         <div>
           <h4 className="text-white font-semibold mb-6">Thông tin</h4>
           <ul className="space-y-4 text-sm">
-            <li><button onClick={() => navigate('about')} className="hover:text-[#FF5A5F] transition-colors">Về chúng tôi</button></li>
-            <li><button onClick={() => navigate('rental-process')} className="hover:text-[#FF5A5F] transition-colors">Quy trình thuê nhà</button></li>
-            <li><button onClick={() => navigate('expat-guide')} className="hover:text-[#FF5A5F] transition-colors">Kinh nghiệm cho Expat</button></li>
-            <li><button onClick={() => navigate('privacy')} className="hover:text-[#FF5A5F] transition-colors">Chính sách bảo mật</button></li>
-            <li><button onClick={() => navigate('terms')} className="hover:text-[#FF5A5F] transition-colors">Điều khoản sử dụng</button></li>
+            <li><a href={pathForRoute('about')} onClick={(event) => handleRouteLink(event, () => navigate('about'))} className="hover:text-[#FF5A5F] transition-colors">Về chúng tôi</a></li>
+            <li><a href={pathForRoute('rental-process')} onClick={(event) => handleRouteLink(event, () => navigate('rental-process'))} className="hover:text-[#FF5A5F] transition-colors">Quy trình thuê nhà</a></li>
+            <li><a href={pathForRoute('expat-guide')} onClick={(event) => handleRouteLink(event, () => navigate('expat-guide'))} className="hover:text-[#FF5A5F] transition-colors">Kinh nghiệm cho Expat</a></li>
+            <li><a href={pathForRoute('privacy')} onClick={(event) => handleRouteLink(event, () => navigate('privacy'))} className="hover:text-[#FF5A5F] transition-colors">Chính sách bảo mật</a></li>
+            <li><a href={pathForRoute('terms')} onClick={(event) => handleRouteLink(event, () => navigate('terms'))} className="hover:text-[#FF5A5F] transition-colors">Điều khoản sử dụng</a></li>
           </ul>
         </div>
 
@@ -422,7 +297,7 @@ const Footer = ({ navigate }) => (
           </ul>
         </div>
       </div>
-      <div className="border-t border-gray-800 pt-8 flex flex-col md:flex-row items-center justify-between text-xs text-gray-500">
+      <div className="border-t border-gray-700 pt-8 flex flex-col md:flex-row items-center justify-between text-xs text-gray-300">
         <p>&copy; 2026 Saigon Retreats. All rights reserved.</p>
         <p className="mt-2 md:mt-0">Designed with ❤️ for a better living experience.</p>
       </div>
@@ -443,9 +318,11 @@ const FloatingContact = () => (
   </div>
 );
 
-const HomePage = ({ navigate, apartments, favoriteIds, onFavorite }) => {
-  const featuredApts = apartments.filter(a => a.featured).slice(0, 3);
+const HomePage = ({ navigate, apartments, loading }) => {
+  const markedFeatured = apartments.filter(a => a.featured);
+  const featuredApts = (markedFeatured.length ? markedFeatured : apartments).slice(0, 3);
   const [districtQuery, setDistrictQuery] = useState('');
+  const [searchNotice, setSearchNotice] = useState('');
 
   const searchByDistrict = (event) => {
     event?.preventDefault();
@@ -456,11 +333,27 @@ const HomePage = ({ navigate, apartments, favoriteIds, onFavorite }) => {
       .replace(/\s+/g, ' ')
       .trim();
     const query = normalize(districtQuery);
-    const exactDistrict = DISTRICTS.find(district => query === normalize(district));
-    const matchedDistrict = exactDistrict || [...DISTRICTS]
-      .sort((a, b) => normalize(b).length - normalize(a).length)
-      .find(district => query.includes(normalize(district)));
-    navigate('listings', matchedDistrict || '');
+    const aliases = [
+      ...DISTRICTS.map(district => [normalize(district), district]),
+      ['binh thanh', 'Quận Bình Thạnh'],
+      ['phu nhuan', 'Quận Phú Nhuận'],
+      ['go vap', 'Quận Gò Vấp'],
+      ['tan binh', 'Quận Tân Bình'],
+      ['tan phu', 'Quận Tân Phú'],
+      ['thao dien', 'Quận 2'],
+      ['phu my hung', 'Quận 7'],
+    ].sort((a, b) => b[0].length - a[0].length);
+    const isWholePhrase = (text, phrase) => {
+      const escaped = phrase.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      return new RegExp(`(^|[^a-z0-9])${escaped}($|[^a-z0-9])`).test(text);
+    };
+    const matchedDistrict = aliases.find(([alias]) => query === alias || isWholePhrase(query, alias))?.[1];
+    if (!matchedDistrict) {
+      setSearchNotice('Vui lòng nhập khu vực theo mẫu, ví dụ: Quận 1, Quận 7 hoặc Bình Thạnh.');
+      return;
+    }
+    setSearchNotice('');
+    navigate('listings', matchedDistrict);
   };
   
   return (
@@ -488,12 +381,14 @@ const HomePage = ({ navigate, apartments, favoriteIds, onFavorite }) => {
           <form onSubmit={searchByDistrict} className="bg-white/10 backdrop-blur-md p-2 rounded-2xl md:rounded-full max-w-4xl mx-auto shadow-2xl flex flex-col md:flex-row items-center gap-2 border border-white/20 animate-fade-in-up" style={{animationDelay: '0.2s'}}>
             <div className="flex-1 w-full bg-white rounded-xl md:rounded-full flex items-center px-6 py-4">
               <MapPin className="text-gray-400 mr-3 shrink-0" size={20} />
-              <input value={districtQuery} onChange={event => setDistrictQuery(event.target.value)} type="text" placeholder="Bạn muốn thuê ở quận nào?" className="w-full outline-none text-gray-800 placeholder-gray-500 bg-transparent text-sm md:text-base" />
+              <label htmlFor="home-district-search" className="sr-only">Khu vực muốn thuê</label>
+              <input id="home-district-search" value={districtQuery} onChange={event => { setDistrictQuery(event.target.value); setSearchNotice(''); }} type="text" placeholder="Bạn muốn thuê ở quận nào?" className="w-full outline-none text-gray-800 placeholder-gray-500 bg-transparent text-sm md:text-base" />
             </div>
             <Button type="submit" variant="accent" className="w-full md:w-auto px-8 py-4 rounded-xl md:rounded-full text-base whitespace-nowrap">
               <Search className="mr-2" size={18} /> Tìm căn hộ
             </Button>
           </form>
+          {searchNotice && <p className="mt-4 text-sm text-white bg-[#0A2540]/70 rounded-xl px-4 py-2 inline-block" role="alert">{searchNotice}</p>}
 
           <div className="mt-10 flex flex-wrap justify-center gap-4 text-sm font-medium animate-fade-in-up" style={{animationDelay: '0.3s'}}>
             <button className="bg-white/20 backdrop-blur-sm px-4 py-2 rounded-full cursor-pointer hover:bg-white hover:text-[#0A2540] transition-colors" onClick={() => navigate('listings', 'Quận 1')}>Quận 1</button>
@@ -516,11 +411,19 @@ const HomePage = ({ navigate, apartments, favoriteIds, onFavorite }) => {
             </Button>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {featuredApts.map(apt => (
-              <ApartmentCard key={apt.id} data={apt} onClick={(id) => navigate('detail', id)} isFavorite={favoriteIds.includes(String(apt.id))} onFavorite={onFavorite} />
-            ))}
-          </div>
+          {loading ? (
+            <div className="rounded-3xl bg-white border border-gray-100 p-12 text-center text-gray-500">Đang tải danh sách căn hộ...</div>
+          ) : featuredApts.length ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+              {featuredApts.map(apt => <ApartmentCard key={apt.id} data={apt} onClick={(id) => navigate('detail', id)} />)}
+            </div>
+          ) : (
+            <div className="rounded-3xl bg-white border border-gray-100 p-12 text-center">
+              <h3 className="text-xl font-bold text-[#0A2540] mb-2">Danh sách căn hộ đang được cập nhật</h3>
+              <p className="text-gray-500 mb-6">Vui lòng liên hệ Zalo để nhận danh sách căn hộ mới nhất.</p>
+              <a href={CONTACT.zalo} target="_blank" rel="noreferrer" className="inline-flex px-5 py-3 rounded-xl bg-[#0A2540] text-white font-semibold">Liên hệ Zalo</a>
+            </div>
+          )}
         </div>
       </section>
 
@@ -553,15 +456,16 @@ const HomePage = ({ navigate, apartments, favoriteIds, onFavorite }) => {
   );
 };
 
-const ListingsPage = ({ navigate, apartments, initialFilters, onFiltersChange, favoriteIds, onFavorite }) => {
+const ListingsPage = ({ navigate, apartments, initialFilters, initialSort, onStateChange, loading }) => {
   const [filters, setFilters] = useState(initialFilters);
-  const [sort, setSort] = useState('recommended');
-  useEffect(() => { onFiltersChange(filters); }, [filters]);
+  const [sort, setSort] = useState(initialSort);
+  useEffect(() => { onStateChange(filters, sort); }, [filters, sort]);
   useEffect(() => {
-    setFilters(current => current.district === initialFilters.district
-      ? current
-      : { ...current, district: initialFilters.district });
-  }, [initialFilters.district]);
+    const currentKey = JSON.stringify(filters);
+    const initialKey = JSON.stringify(initialFilters);
+    if (currentKey !== initialKey) setFilters(initialFilters);
+    if (sort !== initialSort) setSort(initialSort);
+  }, [initialFilters, initialSort]);
   
   const handleAmenityChange = (amenity) => {
     setFilters(prev => ({
@@ -585,7 +489,7 @@ const ListingsPage = ({ navigate, apartments, initialFilters, onFiltersChange, f
         if (filters.priceRange === 'high' && apt.price <= 25000000) return false;
       }
       if (filters.amenities.length > 0) {
-        const hasAllAmenities = filters.amenities.every(a => apt.amenities.includes(a));
+        const hasAllAmenities = filters.amenities.every(a => (apt.amenities || []).includes(a));
         if (!hasAllAmenities) return false;
       }
       return true;
@@ -685,7 +589,7 @@ const ListingsPage = ({ navigate, apartments, initialFilters, onFiltersChange, f
                 <Button 
                   variant="secondary" 
                   className="w-full py-2.5 mt-2"
-                  onClick={() => setFilters({ district: '', type: '', priceRange: '', amenities: [] })}
+                  onClick={() => { setFilters({ district: '', type: '', priceRange: '', amenities: [] }); setSort('recommended'); }}
                 >
                   Xóa bộ lọc
                 </Button>
@@ -705,10 +609,12 @@ const ListingsPage = ({ navigate, apartments, initialFilters, onFiltersChange, f
                </select>
             </div>
 
-            {filteredApts.length > 0 ? (
+            {loading ? (
+              <div className="bg-white rounded-2xl p-16 text-center shadow-sm border border-gray-100 text-gray-500">Đang tải căn hộ...</div>
+            ) : filteredApts.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
                 {filteredApts.map(apt => (
-                  <ApartmentCard key={apt.id} data={apt} onClick={(id) => navigate('detail', id)} isFavorite={favoriteIds.includes(String(apt.id))} onFavorite={onFavorite} />
+                  <ApartmentCard key={apt.id} data={apt} onClick={(id) => navigate('detail', id)} />
                 ))}
               </div>
             ) : (
@@ -727,17 +633,41 @@ const ListingsPage = ({ navigate, apartments, initialFilters, onFiltersChange, f
   );
 };
 
-const DetailPage = ({ id, navigate, apartments, favoriteIds, onFavorite }) => {
+const DetailPage = ({ id, navigate, apartments, loading }) => {
   const [showConsultationPhone, setShowConsultationPhone] = useState(false);
   const [showGallery, setShowGallery] = useState(false);
   const [moveInDate, setMoveInDate] = useState('');
   const [leaseTerm, setLeaseTerm] = useState('6 tháng');
   const [notice, setNotice] = useState('');
+  const [bookingReady, setBookingReady] = useState(false);
+  const closeGalleryButtonRef = useRef(null);
   const apt = apartments.find(a => String(a.id) === String(id));
-  if (!apt) return <div>Not found</div>;
+
+  useEffect(() => {
+    if (!showGallery) return undefined;
+    const previousOverflow = document.body.style.overflow;
+    const closeOnEscape = (event) => { if (event.key === 'Escape') setShowGallery(false); };
+    document.body.style.overflow = 'hidden';
+    document.addEventListener('keydown', closeOnEscape);
+    closeGalleryButtonRef.current?.focus();
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      document.removeEventListener('keydown', closeOnEscape);
+    };
+  }, [showGallery]);
+
+  if (loading) return <div className="min-h-screen pt-36 text-center text-gray-500">Đang tải thông tin căn hộ...</div>;
+  if (!apt) return (
+    <div className="min-h-screen pt-36 text-center px-4">
+      <h1 className="text-4xl font-bold text-[#0A2540] mb-4">Không tìm thấy căn hộ</h1>
+      <p className="text-gray-500 mb-8">Căn hộ có thể đã được gỡ hoặc không còn hiển thị.</p>
+      <Button onClick={() => navigate('listings')} className="px-6 py-3">Xem danh sách căn hộ</Button>
+    </div>
+  );
 
   const similarApts = apartments.filter(a => a.district === apt.district && a.id !== apt.id).slice(0, 3);
-  const isFavorite = favoriteIds.includes(String(apt.id));
+  const images = Array.isArray(apt.images) ? apt.images.filter(Boolean) : [];
+  const leaseMonths = leaseTerm === '6 tháng' ? 6 : leaseTerm === '1 năm' ? 12 : 24;
   const shareApartment = async () => {
     const shareData = { title: apt.title, text: `Xem căn hộ ${apt.title} tại Saigon Retreats`, url: window.location.href };
     try {
@@ -746,15 +676,17 @@ const DetailPage = ({ id, navigate, apartments, favoriteIds, onFavorite }) => {
         await navigator.clipboard.writeText(window.location.href);
         setNotice('Đã sao chép đường dẫn căn hộ.');
       }
-    } catch {}
+    } catch {
+      setNotice('Không thể mở trình chia sẻ. Vui lòng sao chép đường dẫn trên thanh địa chỉ.');
+    }
   };
   const openBookingZalo = () => {
     if (!moveInDate) {
       setNotice('Vui lòng chọn ngày nhận phòng trước khi liên hệ Zalo.');
       return;
     }
-    setNotice(`Ngày nhận phòng ${moveInDate}, thời hạn ${leaseTerm}. Thông tin chưa tự gửi; vui lòng nhắn trực tiếp cho Saigon Retreats trên Zalo.`);
-    window.open(CONTACT.zalo, '_blank', 'noopener,noreferrer');
+    setBookingReady(true);
+    setNotice(`Ngày nhận phòng ${moveInDate}, thời hạn ${leaseTerm}. Hãy mở Zalo và gửi hai thông tin này cho Saigon Retreats.`);
   };
 
   return (
@@ -767,63 +699,61 @@ const DetailPage = ({ id, navigate, apartments, favoriteIds, onFavorite }) => {
             <h1 className="text-3xl md:text-4xl font-bold text-[#0A2540] mb-2">{apt.title}</h1>
             <div className="flex items-center gap-4 text-sm text-gray-500">
               <span className="flex items-center"><MapPin size={16} className="mr-1" /> {apt.district}, TP.HCM</span>
-              <span className="flex items-center"><Star size={16} className="mr-1 text-yellow-400" /> 4.9 (128 đánh giá)</span>
             </div>
           </div>
           <div className="flex gap-3">
             <Button variant="secondary" onClick={shareApartment} className="px-4 py-2 gap-2"><Share size={16} /> Chia sẻ</Button>
-            <Button variant="secondary" onClick={() => onFavorite(apt.id)} className={`px-4 py-2 gap-2 ${isFavorite ? 'text-[#FF5A5F] border-[#FF5A5F]' : ''}`}><Heart size={16} fill={isFavorite ? 'currentColor' : 'none'} /> {isFavorite ? 'Đã lưu' : 'Lưu'}</Button>
           </div>
         </div>
 
         {/* Gallery - Airbnb Style */}
         <div className="grid grid-cols-1 md:grid-cols-4 md:grid-rows-2 gap-2 rounded-2xl overflow-hidden mb-12 h-[400px] md:h-[500px]">
           <div className="md:col-span-2 md:row-span-2 h-full relative cursor-pointer group">
-            <img src={apt.images[0]} alt="Main" className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
+            {images[0] ? <img src={images[0]} alt={`${apt.title} - ảnh chính`} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" /> : <div className="w-full h-full bg-slate-100 flex items-center justify-center text-slate-500">Căn hộ chưa có hình ảnh</div>}
             <div className="absolute inset-0 bg-black/10 group-hover:bg-transparent transition-colors"></div>
           </div>
-          {apt.images[1] && (
+          {images[1] && (
              <div className="hidden md:block h-full relative cursor-pointer group">
-               <img src={apt.images[1]} alt="Image 2" className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
+               <img src={images[1]} alt={`${apt.title} - ảnh 2`} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
              </div>
           )}
-          {apt.images[2] ? (
+          {images[2] ? (
             <div className="hidden md:block h-full relative cursor-pointer group">
-               <img src={apt.images[2]} alt="Image 3" className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
+               <img src={images[2]} alt={`${apt.title} - ảnh 3`} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
              </div>
           ) : (
             <div className="hidden md:block h-full bg-gray-100"></div>
           )}
            <div className="hidden md:block h-full bg-gray-100">
-             {apt.images[3] && <img src={apt.images[3]} alt="Image 4" className="w-full h-full object-cover" />}
+             {images[3] && <img src={images[3]} alt={`${apt.title} - ảnh 4`} className="w-full h-full object-cover" />}
            </div>
-           <button type="button" onClick={() => setShowGallery(true)} className="hidden md:block h-full bg-gray-100 relative group cursor-pointer text-left">
-              {apt.images[4] && <img src={apt.images[4]} alt="Image 5" className="w-full h-full object-cover" />}
+           {images.length > 0 && <button type="button" onClick={() => setShowGallery(true)} className="hidden md:block h-full bg-gray-100 relative group cursor-pointer text-left">
+              {images[4] && <img src={images[4]} alt={`${apt.title} - ảnh 5`} className="w-full h-full object-cover" />}
               <div className="absolute inset-0 bg-black/45 flex items-center justify-center text-white font-semibold group-hover:bg-black/55 transition-colors">
-                 Xem tất cả {apt.images.length} ảnh
+                 Xem tất cả {images.length} ảnh
               </div>
-           </button>
+           </button>}
         </div>
 
-        <button type="button" onClick={() => setShowGallery(true)} className="md:hidden w-full -mt-8 mb-10 py-3 rounded-xl border border-gray-200 font-semibold text-[#0A2540]">
-          Xem tất cả {apt.images.length} ảnh
-        </button>
+        {images.length > 0 && <button type="button" onClick={() => setShowGallery(true)} className="md:hidden w-full -mt-8 mb-10 py-3 rounded-xl border border-gray-200 font-semibold text-[#0A2540]">
+          Xem tất cả {images.length} ảnh
+        </button>}
 
         {showGallery && (
-          <div className="fixed inset-0 z-[100] bg-white overflow-y-auto">
+          <div className="fixed inset-0 z-[100] bg-white overflow-y-auto" role="dialog" aria-modal="true" aria-labelledby="gallery-title">
             <div className="sticky top-0 z-10 bg-white/95 backdrop-blur border-b border-gray-200">
               <div className="max-w-6xl mx-auto px-4 md:px-8 py-4 flex items-center justify-between">
                 <div>
-                  <h2 className="font-bold text-xl text-[#0A2540]">Hình ảnh căn hộ</h2>
-                  <p className="text-sm text-gray-500">{apt.images.length} ảnh · {apt.title}</p>
+                  <h2 id="gallery-title" className="font-bold text-xl text-[#0A2540]">Hình ảnh căn hộ</h2>
+                  <p className="text-sm text-gray-500">{images.length} ảnh · {apt.title}</p>
                 </div>
-                <button type="button" onClick={() => setShowGallery(false)} aria-label="Đóng thư viện ảnh" className="w-11 h-11 rounded-full border border-gray-200 flex items-center justify-center hover:bg-gray-100">
+                <button ref={closeGalleryButtonRef} type="button" onClick={() => setShowGallery(false)} aria-label="Đóng thư viện ảnh" className="w-11 h-11 rounded-full border border-gray-200 flex items-center justify-center hover:bg-gray-100">
                   <X size={22} />
                 </button>
               </div>
             </div>
             <div className="max-w-6xl mx-auto px-4 md:px-8 py-8 grid grid-cols-1 md:grid-cols-2 gap-4">
-              {apt.images.map((image, index) => (
+              {images.map((image, index) => (
                 <img
                   key={`${image}-${index}`}
                   src={image}
@@ -860,7 +790,7 @@ const DetailPage = ({ id, navigate, apartments, favoriteIds, onFavorite }) => {
             <div className="mb-10">
               <h3 className="text-xl font-bold text-[#0A2540] mb-6">Tiện ích nổi bật</h3>
               <div className="grid grid-cols-2 gap-y-6 gap-x-4">
-                {apt.amenities.map(key => (
+                {(apt.amenities || []).filter(key => AMENITIES[key]).map(key => (
                   <div key={key} className="flex items-center gap-4 text-gray-700">
                     <span className="w-8 h-8 flex items-center justify-center bg-gray-50 rounded-full text-gray-500">{AMENITIES[key].icon}</span>
                     <span className="font-medium">{AMENITIES[key].label}</span>
@@ -900,12 +830,12 @@ const DetailPage = ({ id, navigate, apartments, favoriteIds, onFavorite }) => {
               <div className="border border-gray-300 rounded-xl overflow-hidden mb-6 flex flex-col">
                  <div className="flex border-b border-gray-300">
                     <div className="p-3 border-r border-gray-300 flex-1">
-                       <label className="text-[10px] font-bold uppercase text-gray-800 block mb-1">Ngày nhận phòng</label>
-                       <input value={moveInDate} min={new Date().toISOString().slice(0, 10)} onChange={event => setMoveInDate(event.target.value)} type="date" className="w-full text-sm outline-none text-gray-600" />
+                       <label htmlFor="move-in-date" className="text-[10px] font-bold uppercase text-gray-800 block mb-1">Ngày nhận phòng</label>
+                       <input id="move-in-date" value={moveInDate} min={new Date().toISOString().slice(0, 10)} onChange={event => { setMoveInDate(event.target.value); setBookingReady(false); }} type="date" className="w-full text-sm outline-none text-gray-600" />
                     </div>
                     <div className="p-3 flex-1">
-                       <label className="text-[10px] font-bold uppercase text-gray-800 block mb-1">Thời hạn thuê</label>
-                       <select value={leaseTerm} onChange={event => setLeaseTerm(event.target.value)} className="w-full text-sm outline-none text-gray-600 bg-transparent">
+                       <label htmlFor="lease-term" className="text-[10px] font-bold uppercase text-gray-800 block mb-1">Thời hạn thuê</label>
+                       <select id="lease-term" value={leaseTerm} onChange={event => { setLeaseTerm(event.target.value); setBookingReady(false); }} className="w-full text-sm outline-none text-gray-600 bg-transparent">
                          <option>6 tháng</option>
                          <option>1 năm</option>
                          <option>2 năm</option>
@@ -915,6 +845,7 @@ const DetailPage = ({ id, navigate, apartments, favoriteIds, onFavorite }) => {
               </div>
 
               <Button variant="accent" onClick={openBookingZalo} className="w-full py-4 text-lg font-bold mb-4">Đặt lịch xem phòng</Button>
+              {bookingReady && <a href={CONTACT.zalo} target="_blank" rel="noreferrer" className="w-full py-3 mb-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold flex items-center justify-center">Mở Zalo để nhắn lịch xem phòng</a>}
               {showConsultationPhone ? (
                 <a
                   href={CONTACT.phoneHref}
@@ -937,12 +868,8 @@ const DetailPage = ({ id, navigate, apartments, favoriteIds, onFavorite }) => {
               
               <div className="mt-6 pt-6 border-t border-gray-200">
                 <div className="flex items-center justify-between text-sm mb-3 text-gray-600">
-                  <span>Tiền thuê x 12 tháng</span>
-                  <span>{formatPrice(apt.price * 12)}</span>
-                </div>
-                <div className="flex items-center justify-between text-sm mb-3 text-gray-600">
-                  <span>Phí quản lý (ước tính)</span>
-                  <span>1.5 Triệu / tháng</span>
+                  <span>Tiền thuê x {leaseMonths} tháng</span>
+                  <span>{formatPrice(apt.price * leaseMonths)}</span>
                 </div>
               </div>
             </div>
@@ -957,7 +884,7 @@ const DetailPage = ({ id, navigate, apartments, favoriteIds, onFavorite }) => {
             <h2 className="text-2xl font-bold text-[#0A2540] mb-8">Căn hộ tương tự tại {apt.district}</h2>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {similarApts.map(sim => (
-                <ApartmentCard key={sim.id} data={sim} onClick={(id) => navigate('detail', id)} isFavorite={favoriteIds.includes(String(sim.id))} onFavorite={onFavorite} />
+                <ApartmentCard key={sim.id} data={sim} onClick={(id) => navigate('detail', id)} />
               ))}
             </div>
           </div>
@@ -1092,7 +1019,8 @@ const BlogPage = ({ navigate }) => {
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {BLOGS.map((blog) => (
-            <article key={blog.id} onClick={() => navigate('blog-detail', blog.id)} className="bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 cursor-pointer group">
+            <article key={blog.id} className="bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 group">
+              <a href={pathForRoute('blog-detail', blog.id)} onClick={(event) => handleRouteLink(event, () => navigate('blog-detail', blog.id))} className="block h-full" aria-label={`Đọc bài ${blog.title}`}>
               <div className="h-48 overflow-hidden relative">
                 <img src={blog.img} alt={blog.title} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
                 <div className="absolute top-4 left-4 bg-white/90 px-3 py-1 rounded-full text-xs font-bold text-[#0A2540]">{blog.category}</div>
@@ -1101,8 +1029,9 @@ const BlogPage = ({ navigate }) => {
                 <p className="text-xs text-gray-400 mb-2">28 Tháng 7, 2026</p>
                 <h3 className="font-bold text-lg text-[#0A2540] group-hover:text-[#FF5A5F] transition-colors mb-3 line-clamp-2">{blog.title}</h3>
                 <p className="text-sm text-gray-500 mb-4 line-clamp-2">{blog.intro}</p>
-                <button type="button" className="text-[#FF5A5F] font-medium text-sm flex items-center">Đọc tiếp <ChevronRight size={16} /></button>
+                <span className="text-[#D83A42] font-medium text-sm flex items-center">Đọc tiếp <ChevronRight size={16} /></span>
               </div>
+              </a>
             </article>
           ))}
         </div>
@@ -1113,7 +1042,7 @@ const BlogPage = ({ navigate }) => {
 
 const BlogDetailPage = ({ id, navigate }) => {
   const blog = BLOGS.find(item => item.id === id);
-  if (!blog) return <BlogPage navigate={navigate} />;
+  if (!blog) return <NotFoundPage navigate={navigate} />;
 
   return (
     <div className="min-h-screen pt-24 bg-white pb-20">
@@ -1162,7 +1091,7 @@ const ContactPage = () => (
                    <Phone size={24} />
                 </div>
                 <div>
-                   <h4 className="font-bold text-[#0A2540] mb-1">Hotline / Zalo / WhatsApp</h4>
+                   <h4 className="font-bold text-[#0A2540] mb-1">Hotline / Zalo</h4>
                     <p><a href={CONTACT.phoneHref} className="text-gray-600 hover:text-[#FF5A5F]">{CONTACT.phoneDisplay}</a></p>
                 </div>
              </div>
@@ -1187,34 +1116,16 @@ const ContactPage = () => (
           </div>
         </div>
 
-        <div className="bg-white rounded-3xl p-8 border border-gray-100 shadow-[0_8px_30px_rgb(0,0,0,0.08)]">
-          <h3 className="text-2xl font-bold text-[#0A2540] mb-6">Gửi tin nhắn</h3>
-          <form className="space-y-4" onSubmit={(e) => { e.preventDefault(); window.open(CONTACT.zalo, '_blank', 'noopener,noreferrer'); }}>
-            <div className="grid grid-cols-2 gap-4">
-               <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Họ & Tên</label>
-                  <input type="text" className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:border-[#0A2540]" placeholder="Nguyễn Văn A" />
-               </div>
-               <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Số điện thoại</label>
-                  <input type="tel" className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:border-[#0A2540]" placeholder="0901234567" />
-               </div>
-            </div>
-            <div>
-               <label className="block text-sm font-medium text-gray-700 mb-2">Nhu cầu của bạn</label>
-               <select className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:border-[#0A2540]">
-                  <option>Cần tìm thuê căn hộ</option>
-                  <option>Ký gửi cho thuê căn hộ</option>
-                  <option>Hợp tác / Khác</option>
-               </select>
-            </div>
-            <div>
-               <label className="block text-sm font-medium text-gray-700 mb-2">Lời nhắn</label>
-               <textarea rows="4" className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:border-[#0A2540]" placeholder="Bạn cần hỗ trợ thêm thông tin gì?"></textarea>
-            </div>
-            <p className="text-xs text-gray-500">Thông tin trong biểu mẫu không tự động gửi. Sau khi bấm, vui lòng nhắn trực tiếp cho chúng tôi trên Zalo.</p>
-            <Button type="submit" variant="accent" className="w-full py-4 text-lg mt-2">Liên hệ qua Zalo</Button>
-          </form>
+        <div className="bg-[#0A2540] text-white rounded-3xl p-8 md:p-10 shadow-[0_8px_30px_rgb(0,0,0,0.12)]">
+          <div className="w-14 h-14 rounded-2xl bg-blue-500 flex items-center justify-center text-2xl font-bold mb-7">Z</div>
+          <h2 className="text-3xl font-bold mb-4">Trao đổi trực tiếp qua Zalo</h2>
+          <p className="text-white/75 leading-7 mb-8">Nhắn cho Saigon Retreats để hỏi tình trạng căn hộ, đặt lịch xem phòng hoặc ký gửi căn hộ. Chúng tôi sẽ phản hồi trực tiếp theo số 0909 180 942.</p>
+          <a href={CONTACT.zalo} target="_blank" rel="noreferrer" className="w-full py-4 rounded-xl bg-blue-500 hover:bg-blue-600 text-white text-lg font-bold flex items-center justify-center transition-colors">
+            Mở Zalo 0909 180 942
+          </a>
+          <a href={CONTACT.phoneHref} className="w-full py-4 mt-3 rounded-xl border border-white/25 hover:bg-white/10 text-white font-semibold flex items-center justify-center gap-2 transition-colors">
+            <Phone size={20} /> Gọi trực tiếp
+          </a>
         </div>
       </div>
     </div>
@@ -1347,12 +1258,12 @@ const INFO_PAGES = {
   },
   privacy: {
     title: 'Chính sách bảo mật',
-    intro: 'Saigon Retreats tôn trọng quyền riêng tư và chỉ sử dụng dữ liệu để cung cấp chức năng website.',
+    intro: 'Saigon Retreats tôn trọng quyền riêng tư và chỉ sử dụng thông tin khi cần hỗ trợ khách hàng.',
     sections: [
-      ['Dữ liệu được thu thập', 'Tài khoản có thể gồm tên hiển thị, tên đăng nhập, email khôi phục và danh sách căn hộ đã lưu.'],
-      ['Mục đích sử dụng', 'Dữ liệu được dùng để xác thực, khôi phục tài khoản và đồng bộ danh sách yêu thích.'],
-      ['Liên hệ qua Zalo', 'Thông tin nhập tại biểu mẫu không được website lưu hoặc tự gửi; khách chủ động trao đổi qua Zalo.'],
-      ['Quyền của bạn', 'Bạn có thể liên hệ Saigon Retreats để yêu cầu hỗ trợ kiểm tra hoặc xóa tài khoản.'],
+      ['Dữ liệu trên website', 'Khách có thể xem thông tin căn hộ mà không cần đăng ký tài khoản. Website không lưu biểu mẫu liên hệ của khách.'],
+      ['Liên hệ trực tiếp', 'Khi mở Zalo, gọi điện hoặc gửi email, thông tin trao đổi được xử lý trên dịch vụ tương ứng và theo chính sách của dịch vụ đó.'],
+      ['Mục đích sử dụng', 'Thông tin khách chủ động cung cấp chỉ được dùng để tư vấn căn hộ, sắp xếp lịch xem phòng hoặc hỗ trợ ký gửi.'],
+      ['Quyền của bạn', 'Bạn có thể liên hệ Saigon Retreats để yêu cầu kiểm tra, cập nhật hoặc xóa thông tin đã cung cấp trong quá trình tư vấn.'],
     ],
   },
   terms: {
@@ -1360,7 +1271,7 @@ const INFO_PAGES = {
     intro: 'Khi sử dụng website, bạn đồng ý với các nguyên tắc cơ bản dưới đây.',
     sections: [
       ['Thông tin căn hộ', 'Giá, tình trạng và hình ảnh có thể thay đổi; khách cần xác nhận lại trước khi đặt cọc hoặc ký hợp đồng.'],
-      ['Tài khoản', 'Người dùng chịu trách nhiệm bảo mật thông tin đăng nhập và không sử dụng website cho mục đích trái pháp luật.'],
+      ['Sử dụng website', 'Người dùng không được khai thác website cho mục đích trái pháp luật, gây gián đoạn dịch vụ hoặc sao chép nội dung khi chưa được phép.'],
       ['Giao dịch', 'Website hỗ trợ kết nối và cung cấp thông tin; mọi thỏa thuận thuê cần được thể hiện trong hợp đồng giữa các bên.'],
       ['Giới hạn trách nhiệm', 'Nội dung cẩm nang chỉ mang tính tham khảo và không thay thế tư vấn pháp lý chuyên môn.'],
     ],
@@ -1692,29 +1603,49 @@ const AdminPage = ({ apartments, reloadApartments }) => {
 const readLocation = () => {
   const path = window.location.pathname.replace(/\/+$/, '') || '/';
   const query = new URLSearchParams(window.location.search);
-  if (path === '/') return { route: 'home', id: null, district: '' };
-  if (path === '/apartments') return { route: 'listings', id: null, district: query.get('district') || '' };
-  if (path.startsWith('/apartments/')) return { route: 'detail', id: decodeURIComponent(path.split('/')[2]), district: '' };
-  if (path === '/blog') return { route: 'blog', id: null, district: '' };
-  if (path.startsWith('/blog/')) return { route: 'blog-detail', id: decodeURIComponent(path.split('/')[2]), district: '' };
+  const listingFilters = {
+    district: query.get('district') || '',
+    type: query.get('type') || '',
+    priceRange: query.get('price') || '',
+    amenities: query.getAll('amenity').filter(key => AMENITIES[key]),
+  };
+  const requestedSort = query.get('sort') || 'recommended';
+  const listingSort = ['recommended', 'price-asc', 'price-desc', 'newest'].includes(requestedSort) ? requestedSort : 'recommended';
+  const base = { id: null, filters: { district: '', type: '', priceRange: '', amenities: [] }, sort: 'recommended' };
+  if (path === '/') return { ...base, route: 'home' };
+  if (path === '/apartments') return { ...base, route: 'listings', filters: listingFilters, sort: listingSort };
+  if (path.startsWith('/apartments/')) return { ...base, route: 'detail', id: decodeURIComponent(path.split('/')[2]) };
+  if (path === '/blog') return { ...base, route: 'blog' };
+  if (path.startsWith('/blog/')) return { ...base, route: 'blog-detail', id: decodeURIComponent(path.split('/')[2]) };
   const routes = {
-    '/about': 'about', '/contact': 'contact', '/admin': 'admin', '/saved': 'saved',
-    '/login': 'login', '/register': 'register', '/account': 'account',
+    '/about': 'about', '/contact': 'contact', '/admin': 'admin',
     '/rental-process': 'rental-process', '/expat-guide': 'expat-guide',
     '/privacy': 'privacy', '/terms': 'terms',
   };
-  return { route: routes[path] || 'not-found', id: null, district: '' };
+  return { ...base, route: routes[path] || 'not-found' };
 };
 
 const pathForRoute = (route, id) => {
   if (route === 'home') return '/';
-  if (route === 'listings') return `/apartments${id ? `?district=${encodeURIComponent(id)}` : ''}`;
+  if (route === 'listings') {
+    const state = typeof id === 'string'
+      ? { filters: { district: id, type: '', priceRange: '', amenities: [] }, sort: 'recommended' }
+      : (id || { filters: { district: '', type: '', priceRange: '', amenities: [] }, sort: 'recommended' });
+    const filters = state.filters || state;
+    const query = new URLSearchParams();
+    if (filters.district) query.set('district', filters.district);
+    if (filters.type) query.set('type', filters.type);
+    if (filters.priceRange) query.set('price', filters.priceRange);
+    (filters.amenities || []).forEach(amenity => query.append('amenity', amenity));
+    if (state.sort && state.sort !== 'recommended') query.set('sort', state.sort);
+    const search = query.toString();
+    return `/apartments${search ? `?${search}` : ''}`;
+  }
   if (route === 'detail') return `/apartments/${encodeURIComponent(id)}`;
   if (route === 'blog') return '/blog';
   if (route === 'blog-detail') return `/blog/${encodeURIComponent(id)}`;
   const paths = {
-    about: '/about', contact: '/contact', admin: '/admin', saved: '/saved',
-    login: '/login', register: '/register', account: '/account',
+    about: '/about', contact: '/contact', admin: '/admin',
     'rental-process': '/rental-process', 'expat-guide': '/expat-guide',
     privacy: '/privacy', terms: '/terms',
   };
@@ -1729,54 +1660,116 @@ const NotFoundPage = ({ navigate }) => (
   </div>
 );
 
+const STATIC_META = {
+  home: ['Saigon Retreats', 'Khám phá căn hộ cho thuê tại TP.HCM với hình ảnh thực tế, thông tin rõ ràng và hỗ trợ trực tiếp qua Zalo.'],
+  listings: ['Căn hộ cho thuê tại TP.HCM', 'Xem danh sách căn hộ cho thuê theo khu vực, loại phòng, mức giá và tiện ích tại Saigon Retreats.'],
+  about: ['Về Saigon Retreats', 'Tìm hiểu cách Saigon Retreats tuyển chọn và giới thiệu căn hộ cho thuê tại TP.HCM.'],
+  blog: ['Blog & Cẩm nang thuê căn hộ', 'Kinh nghiệm thuê căn hộ, sinh sống và làm thủ tục tại TP.HCM.'],
+  contact: ['Liên hệ Saigon Retreats', 'Liên hệ Saigon Retreats qua Zalo hoặc điện thoại để hỏi căn hộ và đặt lịch xem phòng.'],
+  'rental-process': ['Quy trình thuê nhà', 'Các bước chọn căn, xem phòng, ký hợp đồng và nhận bàn giao căn hộ.'],
+  'expat-guide': ['Kinh nghiệm thuê nhà cho người nước ngoài', 'Những lưu ý về hợp đồng, chi phí và tạm trú dành cho người nước ngoài thuê nhà tại TP.HCM.'],
+  privacy: ['Chính sách bảo mật', 'Chính sách sử dụng và bảo vệ thông tin khách hàng của Saigon Retreats.'],
+  terms: ['Điều khoản sử dụng', 'Điều khoản sử dụng website và thông tin căn hộ tại Saigon Retreats.'],
+  'not-found': ['Không tìm thấy trang', 'Đường dẫn không tồn tại hoặc đã được thay đổi.'],
+};
+
+const setMetaContent = (selector, attributes, content) => {
+  let element = document.head.querySelector(selector);
+  if (!element) {
+    element = document.createElement(attributes.tag || 'meta');
+    Object.entries(attributes).forEach(([key, value]) => { if (key !== 'tag') element.setAttribute(key, value); });
+    document.head.appendChild(element);
+  }
+  if (element.tagName === 'LINK') element.setAttribute('href', content);
+  else element.setAttribute('content', content);
+};
+
 export default function App() {
   const initialLocation = readLocation();
   const [currentRoute, setCurrentRoute] = useState(initialLocation.route);
   const [selectedId, setSelectedId] = useState(initialLocation.id);
-  const [listingDistrict, setListingDistrict] = useState(initialLocation.district);
-  const [listingFilters, setListingFilters] = useState({
-    district: initialLocation.district, type: '', priceRange: '', amenities: []
-  });
-  const [apartments, setApartments] = useState(DEFAULT_APARTMENTS.map(item => ({ ...item, isDefault: true })));
-  const [profile, setProfile] = useState(null);
-  const [favoriteIds, setFavoriteIds] = useState([]);
+  const [listingFilters, setListingFilters] = useState(initialLocation.filters);
+  const [listingSort, setListingSort] = useState(initialLocation.sort);
+  const [apartments, setApartments] = useState([]);
+  const [apartmentsLoading, setApartmentsLoading] = useState(true);
   const [dataStatus, setDataStatus] = useState('');
 
   const reloadApartments = async () => {
+    setApartmentsLoading(true);
     try {
       const data = await listApartments();
-      setApartments([...data, ...DEFAULT_APARTMENTS.map(item => ({ ...item, isDefault: true }))]);
+      setApartments(data);
       setDataStatus('');
     } catch {
-      setDataStatus('Không thể tải dữ liệu mới. Website đang hiển thị danh sách dự phòng.');
-    }
+      setApartments([]);
+      setDataStatus('Không thể tải danh sách căn hộ. Vui lòng thử tải lại trang hoặc liên hệ Zalo.');
+    } finally { setApartmentsLoading(false); }
   };
 
   useEffect(() => { reloadApartments(); }, []);
   useEffect(() => {
-    if (!supabase) return;
-    const refreshAccount = async (session) => {
-      if (!session) { setProfile(null); setFavoriteIds([]); return; }
-      try {
-        const [nextProfile, nextFavorites] = await Promise.all([getMyProfile(), listFavoriteIds()]);
-        setProfile(nextProfile);
-        setFavoriteIds(nextFavorites.map(String));
-      } catch {
-        setProfile(null); setFavoriteIds([]);
-      }
-    };
-    supabase.auth.getSession().then(({ data }) => refreshAccount(data.session));
-    const { data } = supabase.auth.onAuthStateChange((_event, session) => setTimeout(() => refreshAccount(session), 0));
-    return () => data.subscription.unsubscribe();
-  }, []);
+    const apartment = currentRoute === 'detail' ? apartments.find(item => String(item.id) === String(selectedId)) : null;
+    const blog = currentRoute === 'blog-detail' ? BLOGS.find(item => item.id === selectedId) : null;
+    const fallback = STATIC_META[currentRoute] || STATIC_META['not-found'];
+    const title = apartment?.title || blog?.title || fallback[0];
+    const description = (apartment?.description || blog?.intro || fallback[1]).slice(0, 160);
+    const pageTitle = currentRoute === 'home' ? title : `${title} | Saigon Retreats`;
+    const pageUrl = `${window.location.origin}${window.location.pathname}${currentRoute === 'listings' ? '' : window.location.search}`;
+    const shareUrl = `${window.location.origin}${window.location.pathname}${window.location.search}`;
+    const image = apartment?.images?.[0] || blog?.img || `${window.location.origin}/og.jpg`;
+    const noIndex = currentRoute === 'not-found' || (currentRoute === 'detail' && !apartmentsLoading && !apartment) || (currentRoute === 'blog-detail' && !blog);
+
+    document.title = pageTitle;
+    setMetaContent('meta[name="description"]', { name: 'description' }, description);
+    setMetaContent('meta[name="robots"]', { name: 'robots' }, noIndex ? 'noindex, nofollow' : 'index, follow');
+    setMetaContent('link[rel="canonical"]', { tag: 'link', rel: 'canonical' }, pageUrl);
+    setMetaContent('meta[property="og:title"]', { property: 'og:title' }, pageTitle);
+    setMetaContent('meta[property="og:description"]', { property: 'og:description' }, description);
+    setMetaContent('meta[property="og:type"]', { property: 'og:type' }, blog ? 'article' : 'website');
+    setMetaContent('meta[property="og:url"]', { property: 'og:url' }, shareUrl);
+    setMetaContent('meta[property="og:image"]', { property: 'og:image' }, image);
+    setMetaContent('meta[name="twitter:card"]', { name: 'twitter:card' }, 'summary_large_image');
+    setMetaContent('meta[name="twitter:title"]', { name: 'twitter:title' }, pageTitle);
+    setMetaContent('meta[name="twitter:description"]', { name: 'twitter:description' }, description);
+    setMetaContent('meta[name="twitter:image"]', { name: 'twitter:image' }, image);
+
+    const existingStructuredData = document.getElementById('dynamic-structured-data');
+    existingStructuredData?.remove();
+    const structuredData = apartment ? {
+      '@context': 'https://schema.org',
+      '@type': 'Apartment',
+      name: apartment.title,
+      description,
+      image: apartment.images || [],
+      floorSize: { '@type': 'QuantitativeValue', value: apartment.area, unitCode: 'MTK' },
+      address: { '@type': 'PostalAddress', addressLocality: apartment.district, addressRegion: 'TP.HCM', addressCountry: 'VN' },
+      offers: { '@type': 'Offer', price: apartment.price, priceCurrency: 'VND', availability: 'https://schema.org/InStock', url: shareUrl },
+    } : blog ? {
+      '@context': 'https://schema.org',
+      '@type': 'BlogPosting',
+      headline: blog.title,
+      description,
+      image: blog.img,
+      datePublished: '2026-07-28',
+      author: { '@type': 'Organization', name: 'Saigon Retreats' },
+      mainEntityOfPage: shareUrl,
+    } : null;
+    if (structuredData) {
+      const script = document.createElement('script');
+      script.id = 'dynamic-structured-data';
+      script.type = 'application/ld+json';
+      script.textContent = JSON.stringify(structuredData);
+      document.head.appendChild(script);
+    }
+  }, [currentRoute, selectedId, apartments, apartmentsLoading]);
   useEffect(() => {
     const onPopState = () => {
       const location = readLocation();
       setCurrentRoute(location.route);
       setSelectedId(location.id);
-      setListingDistrict(location.district);
       if (location.route === 'listings') {
-        setListingFilters(current => ({ ...current, district: location.district }));
+        setListingFilters(location.filters);
+        setListingSort(location.sort);
       }
     };
     window.addEventListener('popstate', onPopState);
@@ -1790,49 +1783,29 @@ export default function App() {
     window.history.pushState({}, '', pathForRoute(route, id));
     setCurrentRoute(route);
     if (route === 'listings') {
-      setListingDistrict(id || '');
-      setListingFilters(current => ({ ...current, district: id || '' }));
+      const nextLocation = readLocation();
+      setListingFilters(nextLocation.filters);
+      setListingSort(nextLocation.sort);
     }
     if (id && route !== 'listings') setSelectedId(id);
   };
 
-  const toggleFavorite = async (apartmentId) => {
-    if (!profile) { navigate('login'); return; }
-    const id = String(apartmentId);
-    const nextFavorite = !favoriteIds.includes(id);
-    setFavoriteIds(current => nextFavorite ? [...current, id] : current.filter(item => item !== id));
-    try {
-      await setFavorite(id, nextFavorite);
-    } catch (error) {
-      setFavoriteIds(current => nextFavorite ? current.filter(item => item !== id) : [...current, id]);
-      window.alert(error.message || 'Không thể cập nhật danh sách đã lưu.');
-    }
-  };
-
-  const signOut = async () => {
-    await supabase?.auth.signOut();
-    navigate('home');
-  };
-
   const renderContent = () => {
     switch (currentRoute) {
-      case 'home': return <HomePage navigate={navigate} apartments={apartments} favoriteIds={favoriteIds} onFavorite={toggleFavorite} />;
-      case 'listings': return <ListingsPage navigate={navigate} apartments={apartments} initialFilters={listingFilters} onFiltersChange={(nextFilters) => {
+      case 'home': return <HomePage navigate={navigate} apartments={apartments} loading={apartmentsLoading} />;
+      case 'listings': return <ListingsPage navigate={navigate} apartments={apartments} loading={apartmentsLoading} initialFilters={listingFilters} initialSort={listingSort} onStateChange={(nextFilters, nextSort) => {
         setListingFilters(nextFilters);
+        setListingSort(nextSort);
         if (currentRoute === 'listings') {
-          const nextPath = pathForRoute('listings', nextFilters.district || null);
+          const nextPath = pathForRoute('listings', { filters: nextFilters, sort: nextSort });
           if (`${window.location.pathname}${window.location.search}` !== nextPath) window.history.replaceState({}, '', nextPath);
         }
-      }} favoriteIds={favoriteIds} onFavorite={toggleFavorite} />;
-      case 'detail': return <DetailPage id={selectedId} navigate={navigate} apartments={apartments} favoriteIds={favoriteIds} onFavorite={toggleFavorite} />;
+      }} />;
+      case 'detail': return <DetailPage id={selectedId} navigate={navigate} apartments={apartments} loading={apartmentsLoading} />;
       case 'about': return <AboutPage />;
       case 'blog': return <BlogPage navigate={navigate} />;
       case 'blog-detail': return <BlogDetailPage id={selectedId} navigate={navigate} />;
       case 'contact': return <ContactPage />;
-      case 'login': return <AuthPage mode="login" navigate={navigate} />;
-      case 'register': return <AuthPage mode="register" navigate={navigate} />;
-      case 'saved': return <SavedPage apartments={apartments} favoriteIds={favoriteIds} navigate={navigate} onFavorite={toggleFavorite} profile={profile} />;
-      case 'account': return <AccountPage profile={profile} navigate={navigate} onSignOut={signOut} />;
       case 'rental-process':
       case 'expat-guide':
       case 'privacy':
@@ -1844,10 +1817,10 @@ export default function App() {
 
   return (
     <div className="font-sans text-gray-900 selection:bg-[#FF5A5F] selection:text-white flex flex-col min-h-screen">
-      {currentRoute !== 'admin' && <Header currentRoute={currentRoute} navigate={navigate} profile={profile} onSignOut={signOut} />}
+      {currentRoute !== 'admin' && <Header currentRoute={currentRoute} navigate={navigate} />}
       
       <main className="flex-grow">
-        {dataStatus && <div className="fixed top-20 left-1/2 -translate-x-1/2 z-[60] bg-amber-50 text-amber-800 px-4 py-2 rounded-xl shadow text-sm">{dataStatus}</div>}
+        {dataStatus && <div role="alert" className="fixed top-20 left-1/2 -translate-x-1/2 z-[60] bg-amber-50 text-amber-900 px-4 py-2 rounded-xl shadow text-sm">{dataStatus}</div>}
         {renderContent()}
       </main>
 
