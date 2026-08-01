@@ -1732,7 +1732,7 @@ export default function App() {
     const title = apartment?.title || blog?.title || fallback[0];
     const description = (apartment?.description || blog?.intro || fallback[1]).slice(0, 160);
     const pageTitle = currentRoute === 'home' ? title : `${title} | Saigon Retreats`;
-    const pageUrl = `${window.location.origin}${window.location.pathname}${currentRoute === 'listings' ? '' : window.location.search}`;
+    const pageUrl = `${window.location.origin}${window.location.pathname}`;
     const shareUrl = `${window.location.origin}${window.location.pathname}${window.location.search}`;
     const image = apartment?.images?.[0] || blog?.img || `${window.location.origin}/og.jpg`;
     const noIndex = currentRoute === 'not-found' || (currentRoute === 'detail' && !apartmentsLoading && !apartment) || (currentRoute === 'blog-detail' && !blog);
