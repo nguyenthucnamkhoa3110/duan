@@ -30,6 +30,13 @@ const DISTRICTS = [
   'Quận Tân Bình', 'Quận Tân Phú'
 ];
 
+const PRICE_RANGES = {
+  '5-7': { min: 5, max: 7, label: '5 - 7 Triệu' },
+  '7-10': { min: 7, max: 10, label: '7 - 10 Triệu' },
+  '10-15': { min: 10, max: 15, label: '10 - 15 Triệu' },
+  '15-20': { min: 15, max: 20, label: '15 - 20 Triệu' },
+};
+
 const CONTACT = {
   facebook: 'https://www.facebook.com/profile.php?id=61591846062987',
   instagram: 'https://www.instagram.com/_khoathucnam/',
@@ -491,6 +498,10 @@ const ListingsPage = ({ navigate, apartments, initialFilters, initialSort, onSta
     }));
   };
 
+  const minPrice = filters.minPrice === '' ? null : Number(filters.minPrice);
+  const maxPrice = filters.maxPrice === '' ? null : Number(filters.maxPrice);
+  const hasInvalidCustomPrice = minPrice !== null && maxPrice !== null && minPrice > maxPrice;
+
   const filteredApts = useMemo(() => {
     const result = apartments.filter(apt => {
       if (
@@ -498,11 +509,13 @@ const ListingsPage = ({ navigate, apartments, initialFilters, initialSort, onSta
         apt.district.replace(/^Quận\s+/i, '') !== filters.district.replace(/^Quận\s+/i, '')
       ) return false;
       if (filters.type && apt.type !== filters.type) return false;
-      if (filters.priceRange) {
-        if (filters.priceRange === 'low' && apt.price >= 15000000) return false;
-        if (filters.priceRange === 'mid' && (apt.price < 15000000 || apt.price > 25000000)) return false;
-        if (filters.priceRange === 'high' && apt.price <= 25000000) return false;
+      const selectedRange = PRICE_RANGES[filters.priceRange];
+      if (selectedRange) {
+        if (apt.price < selectedRange.min * 1000000 || apt.price > selectedRange.max * 1000000) return false;
       }
+      if (hasInvalidCustomPrice) return false;
+      if (minPrice !== null && apt.price < minPrice * 1000000) return false;
+      if (maxPrice !== null && apt.price > maxPrice * 1000000) return false;
       if (filters.amenities.length > 0) {
         const hasAllAmenities = filters.amenities.every(a => (apt.amenities || []).includes(a));
         if (!hasAllAmenities) return false;
@@ -515,7 +528,7 @@ const ListingsPage = ({ navigate, apartments, initialFilters, initialSort, onSta
       if (sort === 'newest') return String(b.created_at || '').localeCompare(String(a.created_at || ''));
       return Number(b.featured) - Number(a.featured) || (b.views || 0) - (a.views || 0);
     });
-  }, [filters, apartments, sort]);
+  }, [filters, apartments, sort, minPrice, maxPrice, hasInvalidCustomPrice]);
 
   return (
     <div className="min-h-screen bg-gray-50 pt-24 pb-20">
@@ -570,13 +583,50 @@ const ListingsPage = ({ navigate, apartments, initialFilters, initialSort, onSta
                     id="listing-price"
                     className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:border-[#0A2540] transition-colors"
                     value={filters.priceRange}
-                    onChange={(e) => setFilters({...filters, priceRange: e.target.value})}
+                    onChange={(e) => setFilters({...filters, priceRange: e.target.value, minPrice: '', maxPrice: ''})}
                   >
                     <option value="">Mọi mức giá</option>
-                    <option value="low">Dưới 15 Triệu</option>
-                    <option value="mid">15 - 25 Triệu</option>
-                    <option value="high">Trên 25 Triệu</option>
+                    {Object.entries(PRICE_RANGES).map(([value, range]) => <option key={value} value={value}>{range.label}</option>)}
                   </select>
+                  <fieldset className="mt-4 pt-4 border-t border-gray-200">
+                    <legend className="text-xs font-semibold text-gray-600 px-1">Lọc giá nâng cao</legend>
+                    <div className="grid grid-cols-2 gap-2 mt-2">
+                      <label htmlFor="listing-min-price" className="text-xs text-gray-600">Giá Min
+                        <div className="relative mt-1">
+                          <input
+                            id="listing-min-price"
+                            type="number"
+                            min="0"
+                            step="0.1"
+                            inputMode="decimal"
+                            value={filters.minPrice}
+                            onChange={(e) => setFilters({...filters, priceRange: '', minPrice: e.target.value})}
+                            placeholder="6"
+                            className="w-full py-2.5 pl-3 pr-10 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:border-[#0A2540]"
+                          />
+                          <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-gray-400">Triệu</span>
+                        </div>
+                      </label>
+                      <label htmlFor="listing-max-price" className="text-xs text-gray-600">Giá Max
+                        <div className="relative mt-1">
+                          <input
+                            id="listing-max-price"
+                            type="number"
+                            min="0"
+                            step="0.1"
+                            inputMode="decimal"
+                            value={filters.maxPrice}
+                            onChange={(e) => setFilters({...filters, priceRange: '', maxPrice: e.target.value})}
+                            placeholder="9"
+                            className="w-full py-2.5 pl-3 pr-10 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:border-[#0A2540]"
+                          />
+                          <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-gray-400">Triệu</span>
+                        </div>
+                      </label>
+                    </div>
+                    <p className="text-[11px] text-gray-400 mt-2">Ví dụ: nhập 6 và 9 để tìm căn từ 6–9 triệu.</p>
+                    {hasInvalidCustomPrice && <p role="alert" className="text-xs text-red-600 mt-2">Giá Min không được lớn hơn Giá Max.</p>}
+                  </fieldset>
                 </div>
 
                 <div>
@@ -604,7 +654,7 @@ const ListingsPage = ({ navigate, apartments, initialFilters, initialSort, onSta
                 <Button 
                   variant="secondary" 
                   className="w-full py-2.5 mt-2"
-                  onClick={() => { setFilters({ district: '', type: '', priceRange: '', amenities: [] }); setSort('recommended'); }}
+                   onClick={() => { setFilters({ district: '', type: '', priceRange: '', minPrice: '', maxPrice: '', amenities: [] }); setSort('recommended'); }}
                 >
                   Xóa bộ lọc
                 </Button>
@@ -1621,15 +1671,23 @@ const AdminPage = ({ apartments, reloadApartments }) => {
 const readLocation = () => {
   const path = window.location.pathname.replace(/\/+$/, '') || '/';
   const query = new URLSearchParams(window.location.search);
+  const readPriceValue = (key) => {
+    const value = query.get(key);
+    const number = Number(value);
+    return value !== null && value !== '' && Number.isFinite(number) && number >= 0 ? String(number) : '';
+  };
+  const requestedPriceRange = query.get('price') || '';
   const listingFilters = {
     district: query.get('district') || '',
     type: query.get('type') || '',
-    priceRange: query.get('price') || '',
+    priceRange: PRICE_RANGES[requestedPriceRange] ? requestedPriceRange : '',
+    minPrice: readPriceValue('minPrice'),
+    maxPrice: readPriceValue('maxPrice'),
     amenities: query.getAll('amenity').filter(key => AMENITIES[key]),
   };
   const requestedSort = query.get('sort') || 'recommended';
   const listingSort = ['recommended', 'price-asc', 'price-desc', 'newest'].includes(requestedSort) ? requestedSort : 'recommended';
-  const base = { id: null, filters: { district: '', type: '', priceRange: '', amenities: [] }, sort: 'recommended' };
+  const base = { id: null, filters: { district: '', type: '', priceRange: '', minPrice: '', maxPrice: '', amenities: [] }, sort: 'recommended' };
   if (path === '/') return { ...base, route: 'home' };
   if (path === '/apartments') return { ...base, route: 'listings', filters: listingFilters, sort: listingSort };
   if (path.startsWith('/apartments/')) return { ...base, route: 'detail', id: decodeURIComponent(path.split('/')[2]) };
@@ -1647,13 +1705,15 @@ const pathForRoute = (route, id) => {
   if (route === 'home') return '/';
   if (route === 'listings') {
     const state = typeof id === 'string'
-      ? { filters: { district: id, type: '', priceRange: '', amenities: [] }, sort: 'recommended' }
-      : (id || { filters: { district: '', type: '', priceRange: '', amenities: [] }, sort: 'recommended' });
+      ? { filters: { district: id, type: '', priceRange: '', minPrice: '', maxPrice: '', amenities: [] }, sort: 'recommended' }
+      : (id || { filters: { district: '', type: '', priceRange: '', minPrice: '', maxPrice: '', amenities: [] }, sort: 'recommended' });
     const filters = state.filters || state;
     const query = new URLSearchParams();
     if (filters.district) query.set('district', filters.district);
     if (filters.type) query.set('type', filters.type);
     if (filters.priceRange) query.set('price', filters.priceRange);
+    if (filters.minPrice !== '' && filters.minPrice !== undefined) query.set('minPrice', filters.minPrice);
+    if (filters.maxPrice !== '' && filters.maxPrice !== undefined) query.set('maxPrice', filters.maxPrice);
     (filters.amenities || []).forEach(amenity => query.append('amenity', amenity));
     if (state.sort && state.sort !== 'recommended') query.set('sort', state.sort);
     const search = query.toString();
