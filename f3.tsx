@@ -1798,8 +1798,14 @@ const AdminPage = ({ apartments, reloadApartments }) => {
                       onDrop={() => dropImageBefore(item.id)}
                       className={`overflow-hidden rounded-2xl border bg-white shadow-sm transition ${draggedImageId === item.id ? 'opacity-50 border-[#FF5A5F]' : 'border-slate-200'}`}
                     >
-                      <div className="relative aspect-[4/3] bg-slate-100">
-                        <img src={item.url} alt={`Ảnh căn hộ số ${index + 1}`} className="h-full w-full object-cover" />
+                      <div className="relative aspect-[4/3] bg-slate-100 p-1">
+                        <img
+                          src={item.kind === 'new' ? item.url : optimizedImageUrl(item.url, 900)}
+                          onError={event => item.kind === 'existing' && restoreOriginalImage(event, item.url)}
+                          referrerPolicy="no-referrer"
+                          alt={`Ảnh căn hộ số ${index + 1}`}
+                          className="h-full w-full rounded-xl object-contain"
+                        />
                         <div className="absolute left-2 top-2 flex items-center gap-2">
                           <span className="inline-flex h-8 min-w-8 items-center justify-center rounded-full bg-[#0A2540] px-2 text-sm font-bold text-white shadow">{index + 1}</span>
                           {index === 0 && <span className="rounded-full bg-[#D83A42] px-2.5 py-1.5 text-xs font-bold text-white shadow">Ảnh đại diện</span>}
