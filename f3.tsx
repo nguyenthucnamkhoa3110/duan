@@ -801,7 +801,7 @@ const DetailPage = ({ id, navigate, apartments, loading }) => {
             </div>
 
             <div className="mb-10">
-              <h3 className="text-xl font-bold text-[#0A2540] mb-4">Câu chuyện không gian</h3>
+              <h3 className="text-xl font-bold text-[#0A2540] mb-4">Mô tả</h3>
               <p className="text-gray-600 leading-relaxed text-lg font-light">{apt.description}</p>
             </div>
 
