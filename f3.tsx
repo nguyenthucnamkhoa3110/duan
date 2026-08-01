@@ -1382,7 +1382,7 @@ const storagePathFromImageUrl = (url) => {
 const AdminPage = ({ apartments, reloadApartments }) => {
   const [session, setSession] = useState(null);
   const [adminAllowed, setAdminAllowed] = useState(null);
-  const [email, setEmail] = useState('');
+  const [loginName, setLoginName] = useState('');
   const [password, setPassword] = useState('');
   const [status, setStatus] = useState('');
   const [busy, setBusy] = useState(false);
@@ -1433,8 +1433,13 @@ const AdminPage = ({ apartments, reloadApartments }) => {
     setStatus('');
     try {
       if (!supabase) throw new Error('Website chưa được kết nối với kho dữ liệu Supabase.');
-      const { error } = await supabase.auth.signInWithPassword({ email, password });
-      if (error) throw error;
+      const identifier = loginName.trim().toLowerCase();
+      if (identifier.includes('@')) {
+        const { error } = await supabase.auth.signInWithPassword({ email: identifier, password });
+        if (error) throw error;
+      } else {
+        await usernameAuth({ action: 'login', username: identifier, password });
+      }
       setPassword('');
     } catch (error) {
       setStatus(error.message || 'Không thể đăng nhập.');
@@ -1676,8 +1681,9 @@ const AdminPage = ({ apartments, reloadApartments }) => {
           <div className="w-12 h-12 rounded-2xl bg-[#0A2540] text-white flex items-center justify-center mb-6"><ShieldCheck /></div>
           <h1 className="text-3xl font-bold text-[#0A2540] mb-2">Quản trị căn hộ</h1>
           <p className="text-gray-500 mb-8">Đăng nhập để cập nhật nội dung trên Saigon Retreats.</p>
-          <label className="block text-sm font-semibold text-gray-700 mb-2">Email quản trị</label>
-          <input autoFocus required type="email" value={email} onChange={e => setEmail(e.target.value)}
+          <label className="block text-sm font-semibold text-gray-700 mb-2">Email hoặc tên đăng nhập quản trị</label>
+          <input autoFocus required type="text" autoCapitalize="none" autoCorrect="off" value={loginName} onChange={e => setLoginName(e.target.value)}
+            placeholder="VD: thichbocau"
             className="w-full p-3.5 border border-gray-300 rounded-xl outline-none focus:border-[#0A2540] mb-4" />
           <label className="block text-sm font-semibold text-gray-700 mb-2">Mật khẩu quản trị</label>
           <input required type="password" value={password} onChange={e => setPassword(e.target.value)}
