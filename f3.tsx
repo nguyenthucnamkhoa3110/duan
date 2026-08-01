@@ -50,6 +50,19 @@ const formatPrice = (price) => {
   return (price / 1000000).toLocaleString('vi-VN') + ' Triệu';
 };
 
+const optimizedImageUrl = (url, width = 1200) => {
+  if (!url?.includes('.supabase.co/storage/v1/object/public/')) return url;
+  const transformed = url.replace('/storage/v1/object/public/', '/storage/v1/render/image/public/');
+  const separator = transformed.includes('?') ? '&' : '?';
+  return `${transformed}${separator}width=${width}&quality=82&resize=contain`;
+};
+
+const restoreOriginalImage = (event, originalUrl) => {
+  if (event.currentTarget.src === originalUrl) return;
+  event.currentTarget.onerror = null;
+  event.currentTarget.src = originalUrl;
+};
+
 const Button = ({ children, variant = 'primary', className = '', ...props }) => {
   const baseStyle = "inline-flex items-center justify-center font-medium transition-all duration-300 rounded-xl";
   const variants = {
@@ -81,9 +94,11 @@ const ApartmentCard = ({ data, onClick }) => {
       <div className="relative aspect-[4/3] overflow-hidden">
         {data.images?.[0] ? (
           <img
-            src={data.images[0]}
+            src={optimizedImageUrl(data.images[0], 800)}
             alt={data.title}
             loading="lazy"
+            decoding="async"
+            onError={(event) => restoreOriginalImage(event, data.images[0])}
             className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
           />
         ) : (
@@ -709,26 +724,26 @@ const DetailPage = ({ id, navigate, apartments, loading }) => {
         {/* Gallery - Airbnb Style */}
         <div className="grid grid-cols-1 md:grid-cols-4 md:grid-rows-2 gap-2 rounded-2xl overflow-hidden mb-12 h-[400px] md:h-[500px]">
           <div className="md:col-span-2 md:row-span-2 h-full relative cursor-pointer group">
-            {images[0] ? <img src={images[0]} alt={`${apt.title} - ảnh chính`} fetchPriority="high" decoding="async" className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" /> : <div className="w-full h-full bg-slate-100 flex items-center justify-center text-slate-500">Căn hộ chưa có hình ảnh</div>}
+            {images[0] ? <img src={optimizedImageUrl(images[0], 1400)} onError={(event) => restoreOriginalImage(event, images[0])} alt={`${apt.title} - ảnh chính`} fetchPriority="high" decoding="async" className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" /> : <div className="w-full h-full bg-slate-100 flex items-center justify-center text-slate-500">Căn hộ chưa có hình ảnh</div>}
             <div className="absolute inset-0 bg-black/10 group-hover:bg-transparent transition-colors"></div>
           </div>
           {images[1] && (
              <div className="hidden md:block h-full relative cursor-pointer group">
-               <img src={images[1]} alt={`${apt.title} - ảnh 2`} loading="lazy" decoding="async" className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
+               <img src={optimizedImageUrl(images[1], 700)} onError={(event) => restoreOriginalImage(event, images[1])} alt={`${apt.title} - ảnh 2`} loading="lazy" decoding="async" className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
              </div>
           )}
           {images[2] ? (
             <div className="hidden md:block h-full relative cursor-pointer group">
-               <img src={images[2]} alt={`${apt.title} - ảnh 3`} loading="lazy" decoding="async" className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
+               <img src={optimizedImageUrl(images[2], 700)} onError={(event) => restoreOriginalImage(event, images[2])} alt={`${apt.title} - ảnh 3`} loading="lazy" decoding="async" className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
              </div>
           ) : (
             <div className="hidden md:block h-full bg-gray-100"></div>
           )}
            <div className="hidden md:block h-full bg-gray-100">
-              {images[3] && <img src={images[3]} alt={`${apt.title} - ảnh 4`} loading="lazy" decoding="async" className="w-full h-full object-cover" />}
+              {images[3] && <img src={optimizedImageUrl(images[3], 700)} onError={(event) => restoreOriginalImage(event, images[3])} alt={`${apt.title} - ảnh 4`} loading="lazy" decoding="async" className="w-full h-full object-cover" />}
            </div>
            {images.length > 0 && <button type="button" onClick={() => setShowGallery(true)} className="hidden md:block h-full bg-gray-100 relative group cursor-pointer text-left">
-               {images[4] && <img src={images[4]} alt={`${apt.title} - ảnh 5`} loading="lazy" decoding="async" className="w-full h-full object-cover" />}
+               {images[4] && <img src={optimizedImageUrl(images[4], 700)} onError={(event) => restoreOriginalImage(event, images[4])} alt={`${apt.title} - ảnh 5`} loading="lazy" decoding="async" className="w-full h-full object-cover" />}
               <div className="absolute inset-0 bg-black/45 flex items-center justify-center text-white font-semibold group-hover:bg-black/55 transition-colors">
                  Xem tất cả {images.length} ảnh
               </div>
@@ -756,10 +771,11 @@ const DetailPage = ({ id, navigate, apartments, loading }) => {
               {images.map((image, index) => (
                 <img
                   key={`${image}-${index}`}
-                   src={image}
+                   src={optimizedImageUrl(image, index === 0 ? 1800 : 1400)}
                    alt={`${apt.title} - ảnh ${index + 1}`}
                    loading={index === 0 ? 'eager' : 'lazy'}
                    decoding="async"
+                   onError={(event) => restoreOriginalImage(event, image)}
                   className={`w-full rounded-2xl object-cover bg-gray-100 ${index === 0 ? 'md:col-span-2 md:max-h-[700px]' : 'h-auto md:min-h-[320px] md:max-h-[520px]'}`}
                 />
               ))}
