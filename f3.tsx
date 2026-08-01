@@ -35,6 +35,8 @@ const PRICE_RANGES = {
   '7-10': { min: 7, max: 10, label: '7 - 10 Triệu' },
   '10-15': { min: 10, max: 15, label: '10 - 15 Triệu' },
   '15-20': { min: 15, max: 20, label: '15 - 20 Triệu' },
+  '20-30': { min: 20, max: 30, label: '20 - 30 Triệu' },
+  '30-plus': { min: 30, max: null, minExclusive: true, label: 'Trên 30 Triệu' },
 };
 
 const CONTACT = {
@@ -511,7 +513,8 @@ const ListingsPage = ({ navigate, apartments, initialFilters, initialSort, onSta
       if (filters.type && apt.type !== filters.type) return false;
       const selectedRange = PRICE_RANGES[filters.priceRange];
       if (selectedRange) {
-        if (apt.price < selectedRange.min * 1000000 || apt.price > selectedRange.max * 1000000) return false;
+        if (selectedRange.minExclusive ? apt.price <= selectedRange.min * 1000000 : apt.price < selectedRange.min * 1000000) return false;
+        if (selectedRange.max !== null && apt.price > selectedRange.max * 1000000) return false;
       }
       if (hasInvalidCustomPrice) return false;
       if (minPrice !== null && apt.price < minPrice * 1000000) return false;
