@@ -5,7 +5,8 @@ import {
   Menu, X, Phone, Mail, CheckCircle2, Star, Clock, 
   ArrowRight, ShieldCheck, Heart, Share, PlayCircle,
   Facebook, Instagram, Map, Navigation, Upload, Trash2,
-  LogOut, Plus, LoaderCircle, Pencil, Save, Building2, TrainFront
+  LogOut, Plus, LoaderCircle, Pencil, Save, Building2, TrainFront,
+  ChevronLeft, GripVertical, ImagePlus
 } from 'lucide-react';
 import {
   getMyProfile, hasSupabaseConfig, listApartments, supabase, uploadApartmentImages, usernameAuth
@@ -1362,6 +1363,22 @@ const InfoPage = ({ page }) => {
   );
 };
 
+const MAX_APARTMENT_IMAGES = 8;
+const MAX_APARTMENT_IMAGE_BYTES = 8 * 1024 * 1024;
+const APARTMENT_IMAGE_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp']);
+
+const storagePathFromImageUrl = (url) => {
+  if (!url) return '';
+  const marker = '/storage/v1/object/public/apartment-images/';
+  const markerIndex = url.indexOf(marker);
+  if (markerIndex === -1) return '';
+  try {
+    return decodeURIComponent(url.slice(markerIndex + marker.length).split('?')[0]);
+  } catch {
+    return url.slice(markerIndex + marker.length).split('?')[0];
+  }
+};
+
 const AdminPage = ({ apartments, reloadApartments }) => {
   const [session, setSession] = useState(null);
   const [adminAllowed, setAdminAllowed] = useState(null);
@@ -1375,7 +1392,19 @@ const AdminPage = ({ apartments, reloadApartments }) => {
     bathrooms: '1', furnishing: 'Đầy đủ nội thất',
     description: '', amenities: ['washer'], featured: false, status: 'available'
   });
-  const [images, setImages] = useState([]);
+  const [imageItems, setImageItems] = useState([]);
+  const [draggedImageId, setDraggedImageId] = useState(null);
+  const imageItemsRef = useRef([]);
+
+  useEffect(() => {
+    imageItemsRef.current = imageItems;
+  }, [imageItems]);
+
+  useEffect(() => () => {
+    imageItemsRef.current.forEach(item => {
+      if (item.kind === 'new') URL.revokeObjectURL(item.url);
+    });
+  }, []);
 
   useEffect(() => {
     if (!supabase) return;
@@ -1423,7 +1452,13 @@ const AdminPage = ({ apartments, reloadApartments }) => {
   const resetForm = (formElement = null) => {
     setEditingId(null);
     setForm(emptyForm);
-    setImages([]);
+    setImageItems(current => {
+      current.forEach(item => {
+        if (item.kind === 'new') URL.revokeObjectURL(item.url);
+      });
+      return [];
+    });
+    setDraggedImageId(null);
     formElement?.reset();
   };
 
@@ -1443,22 +1478,114 @@ const AdminPage = ({ apartments, reloadApartments }) => {
       featured: Boolean(apartment.featured),
       status: apartment.status || 'available'
     });
-    setImages([]);
+    setImageItems(current => {
+      current.forEach(item => {
+        if (item.kind === 'new') URL.revokeObjectURL(item.url);
+      });
+      return (apartment.images || []).map((url, index) => ({
+        id: `existing-${apartment.id}-${index}-${url}`,
+        kind: 'existing',
+        url,
+        path: apartment.image_paths?.[index] || storagePathFromImageUrl(url)
+      }));
+    });
+    setDraggedImageId(null);
     window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const selectImages = (event) => {
+    const selectedFiles = Array.from(event.target.files || []) as File[];
+    event.target.value = '';
+    if (!selectedFiles.length) return;
+    if (imageItems.length + selectedFiles.length > MAX_APARTMENT_IMAGES) {
+      return setStatus(`Mỗi căn hộ chỉ được có tối đa ${MAX_APARTMENT_IMAGES} ảnh.`);
+    }
+    const unsupportedFile = selectedFiles.find(file => !APARTMENT_IMAGE_TYPES.has(file.type));
+    if (unsupportedFile) {
+      return setStatus(`Ảnh “${unsupportedFile.name}” không đúng định dạng JPG, PNG hoặc WebP.`);
+    }
+    const oversizedFile = selectedFiles.find(file => file.size > MAX_APARTMENT_IMAGE_BYTES);
+    if (oversizedFile) {
+      return setStatus(`Ảnh “${oversizedFile.name}” vượt quá dung lượng 8 MB.`);
+    }
+    const newItems = selectedFiles.map(file => ({
+      id: `new-${crypto.randomUUID()}`,
+      kind: 'new',
+      url: URL.createObjectURL(file),
+      file
+    }));
+    setImageItems(current => [...current, ...newItems]);
+    setStatus('');
+  };
+
+  const moveImage = (id, direction) => {
+    setImageItems(current => {
+      const index = current.findIndex(item => item.id === id);
+      const nextIndex = index + direction;
+      if (index < 0 || nextIndex < 0 || nextIndex >= current.length) return current;
+      const next = [...current];
+      [next[index], next[nextIndex]] = [next[nextIndex], next[index]];
+      return next;
+    });
+  };
+
+  const makeCoverImage = (id) => {
+    setImageItems(current => {
+      const index = current.findIndex(item => item.id === id);
+      if (index <= 0) return current;
+      const next = [...current];
+      const [selected] = next.splice(index, 1);
+      next.unshift(selected);
+      return next;
+    });
+  };
+
+  const removeImage = (id) => {
+    setImageItems(current => {
+      const selected = current.find(item => item.id === id);
+      if (selected?.kind === 'new') URL.revokeObjectURL(selected.url);
+      return current.filter(item => item.id !== id);
+    });
+  };
+
+  const dropImageBefore = (targetId) => {
+    if (!draggedImageId || draggedImageId === targetId) return setDraggedImageId(null);
+    setImageItems(current => {
+      const sourceIndex = current.findIndex(item => item.id === draggedImageId);
+      const targetIndex = current.findIndex(item => item.id === targetId);
+      if (sourceIndex < 0 || targetIndex < 0) return current;
+      const next = [...current];
+      const [selected] = next.splice(sourceIndex, 1);
+      next.splice(targetIndex, 0, selected);
+      return next;
+    });
+    setDraggedImageId(null);
   };
 
   const submitApartment = async (event) => {
     event.preventDefault();
     const formElement = event.currentTarget;
-    if (!editingId && !images.length) return setStatus('Vui lòng chọn ít nhất một hình ảnh.');
+    if (!imageItems.length) return setStatus('Vui lòng giữ lại hoặc chọn ít nhất một hình ảnh.');
     setBusy(true);
     setStatus(editingId ? 'Đang lưu thay đổi...' : 'Đang tải ảnh và đăng căn hộ...');
+    let imageData = null;
+    let databaseSaved = false;
     try {
       if (!supabase || !session?.user) throw new Error('Phiên đăng nhập đã hết hạn.');
-      let imageData = null;
-      if (images.length) {
-        imageData = await uploadApartmentImages(images, session.user.id);
+      const newImageItems = imageItems.filter(item => item.kind === 'new');
+      if (newImageItems.length) {
+        imageData = await uploadApartmentImages(newImageItems.map(item => item.file), session.user.id);
       }
+      let uploadedImageIndex = 0;
+      const orderedImages = imageItems.map(item => {
+        if (item.kind === 'existing') return { url: item.url, path: item.path || storagePathFromImageUrl(item.url) };
+        const resolved = {
+          url: imageData.publicUrls[uploadedImageIndex],
+          path: imageData.uploadedPaths[uploadedImageIndex]
+        };
+        uploadedImageIndex += 1;
+        return resolved;
+      });
       const apartmentData = {
         title: form.title.trim(),
         type: form.type,
@@ -1472,18 +1599,37 @@ const AdminPage = ({ apartments, reloadApartments }) => {
         featured: form.featured,
         status: form.status,
         updated_at: new Date().toISOString(),
-        ...(imageData ? { images: imageData.publicUrls, image_paths: imageData.uploadedPaths } : {})
+        images: orderedImages.map(item => item.url),
+        image_paths: orderedImages.map(item => item.path).filter(Boolean)
       };
       const query = editingId
         ? supabase.from('apartments').update(apartmentData).eq('id', editingId)
         : supabase.from('apartments').insert(apartmentData);
       const { error } = await query;
       if (error) throw error;
+      databaseSaved = true;
+
+      if (editingId) {
+        const originalApartment = apartments.find(item => item.id === editingId);
+        const keptPaths = new Set(orderedImages.map(item => item.path).filter(Boolean));
+        const originalPaths = (originalApartment?.images || []).map((url, index) =>
+          originalApartment.image_paths?.[index] || storagePathFromImageUrl(url)
+        ).filter(Boolean);
+        const removedPaths = originalPaths.filter(path => !keptPaths.has(path));
+        if (removedPaths.length) {
+          const { error: storageError } = await supabase.storage.from('apartment-images').remove(removedPaths);
+          if (storageError) console.error('Không thể dọn ảnh đã xóa:', storageError);
+        }
+      }
+
       await reloadApartments();
       const wasEditing = Boolean(editingId);
       resetForm(formElement);
       setStatus(wasEditing ? 'Đã lưu thay đổi trên website chính.' : 'Đã đăng căn hộ lên website chính.');
     } catch (error) {
+      if (!databaseSaved && imageData?.uploadedPaths?.length && supabase) {
+        await supabase.storage.from('apartment-images').remove(imageData.uploadedPaths);
+      }
       setStatus(error.message || 'Không thể lưu căn hộ.');
     } finally {
       setBusy(false);
@@ -1624,13 +1770,59 @@ const AdminPage = ({ apartments, reloadApartments }) => {
               </div>
             </fieldset>
             <label className="md:col-span-2 border-2 border-dashed border-slate-300 rounded-2xl p-7 text-center cursor-pointer hover:border-[#FF5A5F] transition-colors">
-              <Upload className="mx-auto mb-3 text-[#FF5A5F]" />
-              <span className="font-semibold text-[#0A2540]">Chọn hình ảnh căn hộ</span>
+              <ImagePlus className="mx-auto mb-3 text-[#FF5A5F]" />
+              <span className="font-semibold text-[#0A2540]">Thêm hình ảnh căn hộ</span>
               <span className="block text-sm text-gray-500 mt-1">Tối đa 8 ảnh, JPG/PNG/WebP, mỗi ảnh dưới 8 MB</span>
-              <input required={!editingId} multiple accept="image/jpeg,image/png,image/webp" type="file" onChange={e => setImages(Array.from(e.target.files || []))} className="sr-only" />
-              {images.length > 0 && <span className="block text-sm font-semibold text-green-700 mt-3">Đã chọn {images.length} ảnh</span>}
-              {editingId && images.length === 0 && <span className="block text-sm text-gray-500 mt-3">Không chọn ảnh mới nếu muốn giữ nguyên ảnh hiện tại</span>}
+              <input multiple accept="image/jpeg,image/png,image/webp" type="file" onChange={selectImages} className="sr-only" />
+              <span className="block text-sm font-semibold text-green-700 mt-3">
+                {imageItems.length ? `Đang có ${imageItems.length}/${MAX_APARTMENT_IMAGES} ảnh` : 'Chưa có ảnh nào'}
+              </span>
             </label>
+            {imageItems.length > 0 && (
+              <section className="md:col-span-2 rounded-2xl border border-slate-200 bg-slate-50 p-4 md:p-5" aria-labelledby="apartment-image-order-title">
+                <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-2 mb-4">
+                  <div>
+                    <h3 id="apartment-image-order-title" className="font-bold text-[#0A2540]">Thứ tự hiển thị ảnh</h3>
+                    <p className="text-sm text-slate-500 mt-1">Kéo thả ảnh hoặc dùng nút mũi tên. Ảnh số 1 là ảnh đại diện.</p>
+                  </div>
+                  <span className="text-xs font-semibold text-slate-500">{imageItems.length}/{MAX_APARTMENT_IMAGES} ảnh</span>
+                </div>
+                <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {imageItems.map((item, index) => (
+                    <article
+                      key={item.id}
+                      draggable={!busy}
+                      onDragStart={() => setDraggedImageId(item.id)}
+                      onDragEnd={() => setDraggedImageId(null)}
+                      onDragOver={event => event.preventDefault()}
+                      onDrop={() => dropImageBefore(item.id)}
+                      className={`overflow-hidden rounded-2xl border bg-white shadow-sm transition ${draggedImageId === item.id ? 'opacity-50 border-[#FF5A5F]' : 'border-slate-200'}`}
+                    >
+                      <div className="relative aspect-[4/3] bg-slate-100">
+                        <img src={item.url} alt={`Ảnh căn hộ số ${index + 1}`} className="h-full w-full object-cover" />
+                        <div className="absolute left-2 top-2 flex items-center gap-2">
+                          <span className="inline-flex h-8 min-w-8 items-center justify-center rounded-full bg-[#0A2540] px-2 text-sm font-bold text-white shadow">{index + 1}</span>
+                          {index === 0 && <span className="rounded-full bg-[#D83A42] px-2.5 py-1.5 text-xs font-bold text-white shadow">Ảnh đại diện</span>}
+                        </div>
+                        <span className="absolute right-2 top-2 inline-flex h-8 w-8 items-center justify-center rounded-full bg-white/90 text-slate-500 shadow" aria-hidden="true"><GripVertical size={17} /></span>
+                      </div>
+                      <div className="p-3">
+                        {index > 0 && (
+                          <button type="button" disabled={busy} onClick={() => makeCoverImage(item.id)} className="mb-3 w-full rounded-lg bg-slate-100 px-3 py-2 text-xs font-semibold text-[#0A2540] hover:bg-slate-200 disabled:opacity-50">
+                            Đặt làm ảnh đại diện
+                          </button>
+                        )}
+                        <div className="grid grid-cols-3 gap-2">
+                          <button type="button" disabled={busy || index === 0} onClick={() => moveImage(item.id, -1)} className="inline-flex items-center justify-center rounded-lg border border-slate-200 p-2 text-slate-600 hover:bg-slate-50 disabled:opacity-30" aria-label={`Đưa ảnh ${index + 1} sang trước`}><ChevronLeft size={18} /></button>
+                          <button type="button" disabled={busy || index === imageItems.length - 1} onClick={() => moveImage(item.id, 1)} className="inline-flex items-center justify-center rounded-lg border border-slate-200 p-2 text-slate-600 hover:bg-slate-50 disabled:opacity-30" aria-label={`Đưa ảnh ${index + 1} sang sau`}><ChevronRight size={18} /></button>
+                          <button type="button" disabled={busy} onClick={() => removeImage(item.id)} className="inline-flex items-center justify-center rounded-lg border border-red-200 p-2 text-red-600 hover:bg-red-50 disabled:opacity-50" aria-label={`Xóa ảnh ${index + 1}`}><Trash2 size={18} /></button>
+                        </div>
+                      </div>
+                    </article>
+                  ))}
+                </div>
+              </section>
+            )}
             <label className="md:col-span-2 flex items-center gap-3 text-sm font-medium text-gray-700">
               <input type="checkbox" checked={form.featured} onChange={e => updateField('featured', e.target.checked)} className="w-5 h-5 accent-[#FF5A5F]" />
               Hiển thị ở mục căn hộ nổi bật
